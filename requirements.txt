@@ -3,3 +3,7 @@ pandas
 torch
 huggingface
 tqdm
+torch
+transformers
+sklearn
+tokenizers
