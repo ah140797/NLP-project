@@ -58,7 +58,7 @@ def save_stats_dataset(dataset: IterableDataset, results_file: str) -> None:
     total_size_bytes = 0
 
     for sample in dataset:
-        example_count += 1
+        sample_count += 1
         text = sample["text"]
         words = text.split()
         word_count += len(words)
