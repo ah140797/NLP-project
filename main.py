@@ -39,6 +39,10 @@ UNK_TOKEN = "[UNK]"
 SPL_TOKENS = ["[PAD]", "[CLS]", "[SEP]", "[MASK]"] + [UNK_TOKEN]
 MAX_LENGTH = 512
 
+ALL_MODELS_FOLDER = "models"
+ALL_TOKENIZERS_FOLDER = "tokenizers"
+ALL_RESULTS_FOLDER = "results"
+
 
 def main(args):
     device, n_gpu = get_available_device()
@@ -48,27 +52,23 @@ def main(args):
     wandb.login()
     os.environ["WANDB_LOG_MODEL"] = "checkpoint"
 
-    all_models_folder = "models"
-    tokenizer_folder = "tokenizers"
-    all_results_folder = "results"
-
     for language in args.languages:
         for tokenizer_name in args.tokenizer_types:
             for vocab_size in args.vocab_sizes:
                 for training_size in args.training_sizes:
 
                     tokenizer_file = os.path.join(
-                        tokenizer_folder,
+                        ALL_TOKENIZERS_FOLDER,
                         f"tokenizer_{language}_{tokenizer_name}_vs{vocab_size}_ts{training_size}.json",
                     )
 
                     model_folder = os.path.join(
-                        all_models_folder,
+                        ALL_MODELS_FOLDER,
                         f"model_{language}_{tokenizer_name}_vs{vocab_size}_ts{training_size}",
                     )
 
                     results_folder = os.path.join(
-                        all_results_folder,
+                        ALL_RESULTS_FOLDER,
                         f"{language}_{tokenizer_name}_vs{vocab_size}_ts{training_size}",
                     )
                     os.makedirs(results_folder, exist_ok=True)

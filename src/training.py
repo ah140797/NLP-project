@@ -47,7 +47,7 @@ def add_arguments(parser):
         "-e",
         "--epochs",
         type=int,
-        default=20,
+        default=10,
         help="Number of training epochs.",
     )
     parser.add_argument(
@@ -121,7 +121,7 @@ def create_mlm_trainer(
         per_device_train_batch_size=batch_size,
         learning_rate=learning_rate,
         num_train_epochs=train_epochs,
-        max_steps=2,
+        max_steps=50,
         # load_best_model_at_end=True,
         # eval_strategy="steps",
         # eval_steps=1,
