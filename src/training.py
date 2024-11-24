@@ -115,6 +115,7 @@ def create_mlm_trainer(
         save_strategy="steps",
         logging_steps=10,
         use_cpu=False,
+        fp16=True,
         report_to="wandb",
         gradient_accumulation_steps=8,
         run_name=run_name,

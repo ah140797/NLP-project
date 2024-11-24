@@ -22,6 +22,7 @@ def get_oscar_dataset(language: str, training_size: int) -> IterableDataset:
         language=language,
         streaming=True,
         split="train",  # optional, but the dataset only has a train split
+        trust_remote_code=True,
     )
 
     dataset = dataset.take(training_size)
