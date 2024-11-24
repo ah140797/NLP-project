@@ -30,12 +30,12 @@ Here are the available command-line parameters:
 - `-e`: Number of training epochs. Defaults to `10`.
 - `-b`: Training batch size. Defaults to `128`.
 - `-lr`: Learning rate for training. Defaults to `5e-5`.
-- `-wandb`: Run name for tracking in WandB. Defaults to `"tokenizer_run"`.
+- `-wandb`: Run name for tracking in WandB. Defaults to `tokenizer_run`.
 
 ## Example Usage
 
 ```bash
-python main.py --languages es tr --tokenizer-types BPE WordPiece --vocab-sizes 10000 20000 --training-sizes 10000 20000 --epochs 3 --batch-size 16 --learning-rate 5e-5 --wandb-run-name "example_run"
+python main.py --languages es tr --tokenizer-types BPE WordPiece --vocab-sizes 10000 20000 --training-sizes 10000 20000 --epochs 3 --batch-size 16 --learning-rate 5e-5 --wandb-run-name example_run
 ```
 
 
