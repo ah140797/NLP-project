@@ -14,7 +14,7 @@ from transformers import DistilBertForMaskedLM, DistilBertConfig
 from huggingface_hub import login
 import wandb
 
-from src.utils import get_oscar_dataset, get_available_device
+from src.utils import get_oscar_dataset, count_words_in_dataset, get_available_device
 
 from src.tokenization import (
     train_tokenizer,
@@ -56,6 +56,7 @@ def main(args):
                     model_file = f"{model_folder}/model_{tokenizer_name}_{vocab_size}_{training_size}.json"
 
                     dataset = get_oscar_dataset(language, training_size)
+                    count_words_in_dataset(dataset)
 
                     print("=" * 50)
                     print(f"Start Training with configuration:")

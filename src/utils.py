@@ -39,6 +39,25 @@ def dataset_text_iterator(dataset: IterableDataset):
         yield sample["text"]
 
 
+def count_words_in_dataset(dataset: IterableDataset) -> None:
+    """
+    Counts and prints the total number of words in the dataset.
+
+    Args:
+        dataset (IterableDataset): The dataset to count words in.
+
+    Returns:
+        None
+    """
+    word_count = 0
+    for sample in dataset:
+        text = sample["text"]  # Assuming each sample has a "text" field
+        words = text.split()  # Split the text into words
+        word_count += len(words)  # Count the words and accumulate
+
+    print(f"Total words in dataset: {word_count}")
+
+
 def get_available_device():
     """
     Returns the best available device for PyTorch computations.
