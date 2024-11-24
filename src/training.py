@@ -33,7 +33,7 @@ def add_arguments(parser):
         type=int,
         nargs="+",
         default=[10000],
-        help="Vocabulary sizes for the trained tokenizers. Provide one or more values, e.g., 1000 2000. Defaults to [1000].",
+        help="Vocabulary sizes for the trained tokenizers. Provide one or more values, e.g., 1000 2000.",
     )
     parser.add_argument(
         "-ts",
@@ -41,20 +41,20 @@ def add_arguments(parser):
         type=int,
         nargs="+",
         default=[10000],
-        help="Training sizes for the tokenizers. Provide one or more values, e.g., 1000 5000. Defaults to [1000].",
+        help="Training sizes for the tokenizers. Provide one or more values, e.g., 1000 5000.",
     )
     parser.add_argument(
         "-e",
         "--epochs",
         type=int,
         default=1,
-        help="Number of training epochs. Defaults to 3.",
+        help="Number of training epochs.",
     )
     parser.add_argument(
         "-b",
         "--batch-size",
         type=int,
-        default=264,
+        default=200,
         help="Training batch size. Defaults to 16.",
     )
     parser.add_argument(
@@ -62,14 +62,14 @@ def add_arguments(parser):
         "--learning-rate",
         type=float,
         default=5e-5,
-        help="Learning rate for training. Defaults to 5e-5.",
+        help="Learning rate for training.",
     )
     parser.add_argument(
         "-wandb",
         "--wandb-run-name",
         type=str,
         default="tokenizer_run",
-        help="Run name for tracking WandB. Defaults to tokenizer_run",
+        help="Run name for tracking WandB.",
     )
 
 
@@ -116,7 +116,7 @@ def create_mlm_trainer(
         logging_steps=100,
         use_cpu=False,
         report_to="wandb",
-        # gradient_accumulation_steps=8,
+        gradient_accumulation_steps=8,
         run_name=run_name,
         per_device_train_batch_size=batch_size,
         learning_rate=learning_rate,
