@@ -1,6 +1,9 @@
+import json
+
 from datasets import load_dataset
 from datasets import IterableDataset
 import torch
+from torch import nn
 
 
 def get_oscar_dataset(language: str, training_size: int) -> IterableDataset:
@@ -39,23 +42,71 @@ def dataset_text_iterator(dataset: IterableDataset):
         yield sample["text"]
 
 
-def count_words_in_dataset(dataset: IterableDataset) -> None:
+def save_stats_dataset(dataset: IterableDataset, results_file: str) -> None:
     """
-    Counts and prints the total number of words in the dataset.
+    Counts and saves the total number of words in the dataset, the size of the dataset in MB, and the number of examples.
 
     Args:
         dataset (IterableDataset): The dataset to count words in.
+        results_file (str): json file to where results are appended to.
 
     Returns:
         None
     """
     word_count = 0
+    sample_count = 0
+    total_size_bytes = 0
+
     for sample in dataset:
-        text = sample["text"]  # Assuming each sample has a "text" field
-        words = text.split()  # Split the text into words
-        word_count += len(words)  # Count the words and accumulate
+        example_count += 1
+        text = sample["text"]
+        words = text.split()
+        word_count += len(words)
+
+        # Get the size of the sample in bytes (for one example)
+        total_size_bytes += len(str(sample).encode("utf-8"))
+
+    # Convert bytes to MB
+    total_size_mb = total_size_bytes / (1024 * 1024)
 
     print(f"Total words in dataset: {word_count}")
+    print(f"Total number of examples in dataset: {sample_count}")
+    print(f"Total size of dataset: {total_size_mb:.2f} MB")
+
+    results = {
+        "word_count": word_count,
+        "sample_count": sample_count,
+        "total_size_mb": total_size_mb,
+    }
+
+    # Write the results to the file
+    with open(results_file, "w") as f:
+        json.dump(results, f, indent=4)
+
+    return
+
+
+def save_num_params(model: nn.Module, results_file: str) -> None:
+    """
+    Print and saves the total number of parameters in the model in millions.
+
+    Args:
+        model (nn.Module): The model whose parameters are to be counted.
+        results_path (str): json file to where results are appended to.
+    """
+    num_params = sum(p.numel() for p in model.parameters())
+    num_params_million = num_params / 1e6
+    print(f"Number of parameters in the model: {num_params_million:.2f}M")
+
+    results = {
+        "num_params_million": num_params_million,
+    }
+
+    # Write the results to the file
+    with open(results_file, "w") as f:
+        json.dump(results, f, indent=4)
+
+    return
 
 
 def get_available_device():

@@ -14,7 +14,12 @@ from transformers import DistilBertForMaskedLM, DistilBertConfig
 from huggingface_hub import login
 import wandb
 
-from src.utils import get_oscar_dataset, count_words_in_dataset, get_available_device
+from src.utils import (
+    get_oscar_dataset,
+    save_stats_dataset,
+    save_num_params,
+    get_available_device,
+)
 
 from src.tokenization import (
     train_tokenizer,
@@ -44,19 +49,32 @@ def main(args):
     wandb.login()
     os.environ["WANDB_LOG_MODEL"] = "checkpoint"
 
-    model_folder = "models/"
-    tokenizer_folder = "tokenizers/"
+    model_folder = "models"
+    tokenizer_folder = "tokenizers"
+    results_folder = "results"
 
     for language in args.languages:
         for tokenizer_name in args.tokenizer_types:
             for vocab_size in args.vocab_sizes:
                 for training_size in args.training_sizes:
 
-                    tokenizer_file = f"{tokenizer_folder}/tokenizer_{tokenizer_name}_{vocab_size}_{training_size}.json"
-                    model_file = f"{model_folder}/model_{tokenizer_name}_{vocab_size}_{training_size}.json"
+                    tokenizer_file = os.path.join(
+                        tokenizer_folder,
+                        f"tokenizer_{language}_{tokenizer_name}_{vocab_size}_{training_size}.json",
+                    )
+
+                    model_file = os.path.join(
+                        model_folder,
+                        f"model_{language}_{tokenizer_name}_{vocab_size}_{training_size}",
+                    )
+
+                    results_file = os.path.join(
+                        results_folder,
+                        f"result_{language}_{tokenizer_name}_{vocab_size}_{training_size}.json",
+                    )
 
                     dataset = get_oscar_dataset(language, training_size)
-                    count_words_in_dataset(dataset)
+                    save_stats_dataset(dataset, results_file)
 
                     print("=" * 50)
                     print(f"Start Training with configuration:")
@@ -79,6 +97,7 @@ def main(args):
                     configuration = DistilBertConfig(vocab_size=vocab_size)
                     model = DistilBertForMaskedLM(configuration)
 
+                    max_steps = int(training_size / args.batch_size)
                     trainer = create_mlm_trainer(
                         tokenizer,
                         model,
@@ -88,9 +107,11 @@ def main(args):
                         args.learning_rate,
                         args.wandb_run_name,
                         args.epochs,
+                        max_steps,
                     )
 
                     trainer.train()
+                    save_num_params(model, results_file)
 
                 return
 

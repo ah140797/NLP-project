@@ -40,7 +40,7 @@ def add_arguments(parser):
         "--training-sizes",
         type=int,
         nargs="+",
-        default=[100000],
+        default=[10000],
         help="Training sizes for the tokenizers. Provide one or more values, e.g., 1000 5000. Defaults to [1000].",
     )
     parser.add_argument(
@@ -82,6 +82,7 @@ def create_mlm_trainer(
     learning_rate: float,
     run_name: str,
     train_epochs: int,
+    max_steps: int,
 ):
     """
     Creates and configures a Trainer for masked language model training. Masks 15% of the tokens for MLM training.
@@ -95,6 +96,7 @@ def create_mlm_trainer(
         learning_rate (float): The learning rate for training.
         run_name (str): The name for the training run (for tracking).
         train_epochs (int): The number of training epochs.
+        max_steps (int): max steps taken. Needs to be set when using IteretableDataset.
 
     Returns:
         Trainer: The configured Trainer instance.
@@ -108,16 +110,18 @@ def create_mlm_trainer(
         output_dir=f"./{model_file}",
         overwrite_output_dir=True,
         lr_scheduler_type="linear",
-        max_steps=100000000,
+        warmup_ratio=0.01,
         logging_dir="./logs",
         save_strategy="steps",
         logging_steps=100,
         use_cpu=False,
         report_to="wandb",
+        gradient_accumulation_steps=8,
         run_name=run_name,
         per_device_train_batch_size=batch_size,
         learning_rate=learning_rate,
         num_train_epochs=train_epochs,
+        max_steps=max_steps,
         # load_best_model_at_end=True,
         # eval_strategy="steps",
         # eval_steps=1,
