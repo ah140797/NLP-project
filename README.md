@@ -21,14 +21,16 @@
 
 ## Available Parameters
 
-- `--languages`: Language codes for the dataset (e.g., `es`, `tr`). Defaults to `['es']`.
-- `--tokenizer-types`: Tokenizer types to train. Choices: `BPE`, `WordPiece`, `Unigram`. Defaults to `['BPE']`.
-- `--vocab-sizes`: Vocabulary sizes for the tokenizers. Defaults to `[10000]`.
-- `--training-sizes`: Number of training examples. Defaults to `[10000]`.
-- `--epochs`: Number of training epochs. Defaults to `1`.
-- `--batch-size`: Training batch size. Defaults to `264`.
-- `--learning-rate`: Learning rate for training. Defaults to `5e-5`.
-- `--wandb-run-name`: Run name for tracking in WandB. Defaults to `tokenizer_run`.
+Here are the available command-line parameters:
+
+- `-l`: Language codes for the dataset (e.g., `es`, `tr`). Defaults to `['es']`.
+- `-t`: Tokenizer types to train. Choices: `BPE`, `WordPiece`, `Unigram`. Defaults to `['BPE']`.
+- `-vs`: Vocabulary sizes for the tokenizers. Defaults to `[10000]`.
+- `-ts`: Number of training examples. Defaults to `[100000]`.
+- `-e`: Number of training epochs. Defaults to `10`.
+- `-b`: Training batch size. Defaults to `128`.
+- `-lr`: Learning rate for training. Defaults to `5e-5`.
+- `-wandb`: Run name for tracking in WandB. Defaults to `"tokenizer_run"`.
 
 ## Example Usage
 
