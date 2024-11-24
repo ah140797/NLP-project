@@ -32,7 +32,7 @@ def add_arguments(parser):
         "--vocab-sizes",
         type=int,
         nargs="+",
-        default=[1000],
+        default=[10000],
         help="Vocabulary sizes for the trained tokenizers. Provide one or more values, e.g., 1000 2000. Defaults to [1000].",
     )
     parser.add_argument(
@@ -40,21 +40,21 @@ def add_arguments(parser):
         "--training-sizes",
         type=int,
         nargs="+",
-        default=[1000],
+        default=[100000],
         help="Training sizes for the tokenizers. Provide one or more values, e.g., 1000 5000. Defaults to [1000].",
     )
     parser.add_argument(
         "-e",
         "--epochs",
         type=int,
-        default=3,
+        default=1,
         help="Number of training epochs. Defaults to 3.",
     )
     parser.add_argument(
         "-b",
         "--batch-size",
         type=int,
-        default=16,
+        default=64,
         help="Training batch size. Defaults to 16.",
     )
     parser.add_argument(
@@ -108,10 +108,10 @@ def create_mlm_trainer(
         output_dir=f"./{model_file}",
         overwrite_output_dir=True,
         lr_scheduler_type="linear",
-        max_steps=1,
+        max_steps=100000000,
         logging_dir="./logs",
         save_strategy="steps",
-        logging_steps=1,
+        logging_steps=100,
         use_cpu=False,
         report_to="wandb",
         run_name=run_name,

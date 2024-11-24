@@ -36,7 +36,6 @@ MAX_LENGTH = 512
 
 
 def main(args):
-
     torch.cuda.empty_cache()
     device, n_gpu = get_available_device()
     print(f"Using device: {device}\nWith {n_gpu} GPUs")
