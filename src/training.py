@@ -40,7 +40,7 @@ def add_arguments(parser):
         "--training-sizes",
         type=int,
         nargs="+",
-        default=[200000],
+        default=[10000],
         help="Training sizes for the tokenizers. Provide one or more values, e.g., 1000 5000.",
     )
     parser.add_argument(
