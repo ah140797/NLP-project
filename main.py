@@ -41,7 +41,6 @@ MAX_LENGTH = 512
 
 
 def main(args):
-    torch.cuda.empty_cache()
     device, n_gpu = get_available_device()
     print(f"Using device: {device}\nWith {n_gpu} GPUs")
 
@@ -109,7 +108,7 @@ def main(args):
                         args.epochs,
                         max_steps,
                     )
-
+                    torch.cuda.empty_cache()
                     trainer.train()
                     save_num_params(model, results_file)
 
