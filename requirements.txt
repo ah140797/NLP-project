@@ -5,5 +5,8 @@ huggingface
 tqdm
 torch
 transformers
-sklearn
+scikit-learn
 tokenizers
+accelerate
+wandb
+datasets
