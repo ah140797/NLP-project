@@ -116,7 +116,7 @@ def create_mlm_trainer(
         logging_steps=100,
         use_cpu=False,
         report_to="wandb",
-        gradient_accumulation_steps=8,
+        # gradient_accumulation_steps=8,
         run_name=run_name,
         per_device_train_batch_size=batch_size,
         learning_rate=learning_rate,
