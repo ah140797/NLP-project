@@ -48,9 +48,9 @@ def main(args):
     wandb.login()
     os.environ["WANDB_LOG_MODEL"] = "checkpoint"
 
-    model_folder = "models"
+    all_models_folder = "models"
     tokenizer_folder = "tokenizers"
-    results_folder = "results"
+    all_results_folder = "results"
 
     for language in args.languages:
         for tokenizer_name in args.tokenizer_types:
@@ -59,21 +59,21 @@ def main(args):
 
                     tokenizer_file = os.path.join(
                         tokenizer_folder,
-                        f"tokenizer_{language}_{tokenizer_name}_{vocab_size}_{training_size}.json",
+                        f"tokenizer_{language}_{tokenizer_name}_vs{vocab_size}_ts{training_size}.json",
                     )
 
-                    model_file = os.path.join(
-                        model_folder,
-                        f"model_{language}_{tokenizer_name}_{vocab_size}_{training_size}",
+                    model_folder = os.path.join(
+                        all_models_folder,
+                        f"model_{language}_{tokenizer_name}_vs{vocab_size}_ts{training_size}",
                     )
 
-                    results_file = os.path.join(
-                        results_folder,
-                        f"result_{language}_{tokenizer_name}_{vocab_size}_{training_size}.json",
+                    results_folder = os.path.join(
+                        all_results_folder,
+                        f"{language}_{tokenizer_name}_vs{vocab_size}_ts{training_size}",
                     )
 
                     dataset = get_oscar_dataset(language, training_size)
-                    save_stats_dataset(dataset, results_file)
+                    save_stats_dataset(dataset, results_folder)
 
                     print("=" * 50)
                     print(f"Start Training with configuration:")
@@ -101,7 +101,7 @@ def main(args):
                         tokenizer,
                         model,
                         tokenized_dataset,
-                        model_file,
+                        model_folder,
                         args.batch_size,
                         args.learning_rate,
                         args.wandb_run_name,
@@ -110,7 +110,7 @@ def main(args):
                     )
                     torch.cuda.empty_cache()
                     trainer.train()
-                    save_num_params(model, results_file)
+                    save_num_params(model, results_folder)
 
                 return
 

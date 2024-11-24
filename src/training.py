@@ -40,14 +40,14 @@ def add_arguments(parser):
         "--training-sizes",
         type=int,
         nargs="+",
-        default=[10000],
+        default=[200000],
         help="Training sizes for the tokenizers. Provide one or more values, e.g., 1000 5000.",
     )
     parser.add_argument(
         "-e",
         "--epochs",
         type=int,
-        default=1,
+        default=20,
         help="Number of training epochs.",
     )
     parser.add_argument(
@@ -113,7 +113,7 @@ def create_mlm_trainer(
         warmup_ratio=0.01,
         logging_dir="./logs",
         save_strategy="steps",
-        logging_steps=100,
+        logging_steps=10,
         use_cpu=False,
         report_to="wandb",
         gradient_accumulation_steps=8,
@@ -121,7 +121,7 @@ def create_mlm_trainer(
         per_device_train_batch_size=batch_size,
         learning_rate=learning_rate,
         num_train_epochs=train_epochs,
-        max_steps=max_steps,
+        max_steps=2,
         # load_best_model_at_end=True,
         # eval_strategy="steps",
         # eval_steps=1,

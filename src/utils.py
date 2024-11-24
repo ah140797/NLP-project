@@ -1,4 +1,5 @@
 import json
+import os
 
 from datasets import load_dataset
 from datasets import IterableDataset
@@ -42,13 +43,13 @@ def dataset_text_iterator(dataset: IterableDataset):
         yield sample["text"]
 
 
-def save_stats_dataset(dataset: IterableDataset, results_file: str) -> None:
+def save_stats_dataset(dataset: IterableDataset, results_folder: str) -> None:
     """
     Counts and saves the total number of words in the dataset, the size of the dataset in MB, and the number of examples.
 
     Args:
         dataset (IterableDataset): The dataset to count words in.
-        results_file (str): json file to where results are appended to.
+        results_folder (str): path where results are saved
 
     Returns:
         None
@@ -63,7 +64,7 @@ def save_stats_dataset(dataset: IterableDataset, results_file: str) -> None:
         words = text.split()
         word_count += len(words)
 
-        # Get the size of the sample in bytes (for one example)
+        # Get the size of the sample in bytes
         total_size_bytes += len(str(sample).encode("utf-8"))
 
     # Convert bytes to MB
@@ -79,20 +80,24 @@ def save_stats_dataset(dataset: IterableDataset, results_file: str) -> None:
         "total_size_mb": total_size_mb,
     }
 
-    # Write the results to the file
+    results_file = os.path.join(
+        results_folder,
+        f"dataset_stats.json",
+    )
+
     with open(results_file, "w") as f:
         json.dump(results, f, indent=4)
 
     return
 
 
-def save_num_params(model: nn.Module, results_file: str) -> None:
+def save_num_params(model: nn.Module, results_folder: str) -> None:
     """
     Print and saves the total number of parameters in the model in millions.
 
     Args:
         model (nn.Module): The model whose parameters are to be counted.
-        results_path (str): json file to where results are appended to.
+        results_path (str): path where results are saved
     """
     num_params = sum(p.numel() for p in model.parameters())
     num_params_million = num_params / 1e6
@@ -102,7 +107,11 @@ def save_num_params(model: nn.Module, results_file: str) -> None:
         "num_params_million": num_params_million,
     }
 
-    # Write the results to the file
+    results_file = os.path.join(
+        results_folder,
+        f"model_num_params.json",
+    )
+
     with open(results_file, "w") as f:
         json.dump(results, f, indent=4)
 
