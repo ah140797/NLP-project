@@ -97,7 +97,8 @@ def main(args):
                     configuration = DistilBertConfig(vocab_size=vocab_size)
                     model = DistilBertForMaskedLM(configuration)
 
-                    max_steps = int(training_size / args.batch_size)
+                    max_steps = int(training_size / args.batch_size / 8) * args.epochs
+                    print(f"Max steps: {max_steps}")
                     trainer = create_mlm_trainer(
                         tokenizer,
                         model,

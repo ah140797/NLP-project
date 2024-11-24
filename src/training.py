@@ -40,7 +40,7 @@ def add_arguments(parser):
         "--training-sizes",
         type=int,
         nargs="+",
-        default=[10000],
+        default=[100000],
         help="Training sizes for the tokenizers. Provide one or more values, e.g., 1000 5000.",
     )
     parser.add_argument(
@@ -122,7 +122,7 @@ def create_mlm_trainer(
         per_device_train_batch_size=batch_size,
         learning_rate=learning_rate,
         num_train_epochs=train_epochs,
-        max_steps=50,
+        max_steps=max_steps,
         # load_best_model_at_end=True,
         # eval_strategy="steps",
         # eval_steps=1,
