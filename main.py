@@ -71,6 +71,7 @@ def main(args):
                         all_results_folder,
                         f"{language}_{tokenizer_name}_vs{vocab_size}_ts{training_size}",
                     )
+                    os.makedirs(results_folder, exist_ok=True)
 
                     dataset = get_oscar_dataset(language, training_size)
                     save_stats_dataset(dataset, results_folder)
