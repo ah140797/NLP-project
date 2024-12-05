@@ -3,7 +3,7 @@ from transformers import PreTrainedTokenizerFast
 from transformers import DistilBertForMaskedLM
 from datasets import IterableDataset
 
-from eval import compute_bpc
+from .eval import compute_bpc
 
 TOKENIZER_BPE = "BPE"
 TOKENIZER_WPC = "WordPiece"
