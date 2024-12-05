@@ -3,6 +3,8 @@ from transformers import PreTrainedTokenizerFast
 from transformers import DistilBertForMaskedLM
 from datasets import IterableDataset
 
+from eval import compute_bpc
+
 TOKENIZER_BPE = "BPE"
 TOKENIZER_WPC = "WordPiece"
 TOKENIZER_UNI = "Unigram"
@@ -134,6 +136,7 @@ def create_mlm_trainer(
         train_dataset=tokenized_dataset,
         tokenizer=tokenizer,
         data_collator=data_collator,
+        compute_metrics=compute_bpc,
     )
 
     return trainer

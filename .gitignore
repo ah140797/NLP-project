@@ -5,3 +5,6 @@
 /wandb
 models/*/
 tokenizers/*.json
+
+anders_test.ipynb
+

@@ -38,4 +38,9 @@ Here are the available command-line parameters:
 python main.py --languages es tr --tokenizer-types BPE WordPiece --vocab-sizes 10000 20000 --training-sizes 10000 20000 --epochs 3 --batch-size 16 --learning-rate 5e-5 --wandb-run-name example_run
 ```
 
+## Replicate Results
+```bash
+python main.py blep blap blup
+```
+
 
