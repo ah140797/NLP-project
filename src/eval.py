@@ -38,8 +38,9 @@ def eval_bpc(
             nll_loss = outputs.loss.item()
             nll_losses.append(nll_loss)
 
+    print(f"# NLL Losses {len(nll_losses)}")
     # Calculate average NLL and perplexity
-    averaged_nll = sum(nll_losses) / total_tokens
+    averaged_nll = sum(nll_losses) / len(nll_losses)
     perplexity = exp(averaged_nll)
 
     print(f"Tokens: {total_tokens}")
