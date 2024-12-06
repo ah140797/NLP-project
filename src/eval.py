@@ -51,6 +51,3 @@ def eval_bpc(
     print(f"BPC {bpc}")
 
     return bpc
-
-
-#

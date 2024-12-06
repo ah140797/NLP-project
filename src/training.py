@@ -7,6 +7,8 @@ import torch
 from math import exp
 from math import log as ln
 
+from .custom_trainer import CustomTrainer, CustomCallback
+
 TOKENIZER_BPE = "BPE"
 TOKENIZER_WPC = "WordPiece"
 TOKENIZER_UNI = "Unigram"
@@ -114,6 +116,57 @@ def create_mlm_trainer(
         Trainer: The configured Trainer instance.
     """
 
+    def compute_bpc(pred: tuple[torch.tensor, torch.tensor]) -> dict[str, float]:
+        """
+        Calculates Perplexity (PPL) and Bits Per Character (BPC) for a batch.
+
+        Args:
+            pred (Tuple[torch.Tensor, torch.Tensor]):
+                    - logits (torch.Tensor): Model output logits of shape [batch_size, seq_len, vocab_size].
+                    - labels (torch.Tensor): Ground-truth token labels of shape [batch_size, seq_len].
+            tokenizer (PreTrainedTokenizerBase):
+                A tokenizer instance used to compute the character-level length.
+
+        Returns:
+            Dict[str, float]:
+                - "ppl" (float): Perplexity of the batch.
+                - "bpc" (float): Bits per character of the batch.
+        """
+        nonlocal tokenizer
+        logits, labels = pred
+        logits = torch.tensor(logits)
+        labels = torch.tensor(labels)
+
+        print(logits.shape)
+        print(labels.shape)
+
+        mask = (
+            labels != -100
+        )  # -100 is the default ignore index for padding in Hugging Face#
+        labels = labels[mask]
+        logits = logits[mask]
+
+        print(labels)
+        print(logits)
+        print(logits.shape)
+        print(labels.shape)
+
+        probs = torch.nn.functional.softmax(logits, dim=-1)
+        print(probs.shape)
+        true_probs = probs[torch.arange(len(labels)), labels]
+
+        nll = -torch.log(true_probs).mean().item()
+        perplexity = exp(nll)
+        print(nll)
+        print(perplexity)
+
+        total_chars = sum(
+            len(tokenizer.decode([label])) for label in labels
+        )  # going from token id to token and then to chars
+        bpc = ln(perplexity) / ln(2) * (len(labels) / total_chars)
+
+        return {"ppl": float(perplexity), "bpc": float(bpc)}
+
     data_collator = DataCollatorForLanguageModeling(
         tokenizer=tokenizer, mlm=True, mlm_probability=0.15, return_tensors="pt"
     )
@@ -125,88 +178,65 @@ def create_mlm_trainer(
         warmup_ratio=0.01,
         logging_dir="./logs",
         save_strategy="steps",
-        logging_steps=10,
+        logging_steps=1,
         use_cpu=False,
         fp16=True,
         report_to="wandb",
-        gradient_accumulation_steps=8,
+        # gradient_accumulation_steps=8,
         run_name=run_name,
         per_device_train_batch_size=batch_size,
         learning_rate=learning_rate,
         num_train_epochs=train_epochs,
         max_steps=max_steps,
-        # load_best_model_at_end=True,
-        # eval_strategy="steps",
-        # eval_steps=1,
+        evaluation_strategy="steps",
+        per_device_eval_batch_size=batch_size,
     )
 
     trainer = Trainer(
         model=model,
         args=training_args,
         train_dataset=tokenized_dataset,
+        eval_dataset=tokenized_dataset,
         tokenizer=tokenizer,
         data_collator=data_collator,
-        compute_metrics=compute_metrics,
+        compute_metrics=compute_bpc,
     )
 
+    # trainer.add_callback(CustomCallback(trainer))
     return trainer
 
 
-def compute_metrics(eval_pred):
-    """
-    Compute perplexity directly from logits and labels.
-    """
-    logits, labels = eval_pred
-    # Convert logits to probabilities
-    probs = torch.nn.functional.log_softmax(torch.tensor(logits), dim=-1)
-    # Gather the log probabilities of the correct labels
-    labels = torch.tensor(labels)
-    # Mask to ignore padding or special tokens
-    mask = labels != -100  # Assuming -100 is the ignored index
-    nll_loss = -probs[range(labels.shape[0]), labels] * mask
-    mean_loss = nll_loss.sum() / mask.sum()
-    perplexity = exp(mean_loss.item())
-    return {"perplexity": perplexity}
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
 
-def compute_bpc(
-    pred: tuple[torch.tensor, torch.tensor], tokenizer: PreTrainedTokenizerFast
-) -> dict[str, float]:
-    """
-    Calculates Perplexity (PPL) and Bits Per Character (BPC) for a batch.
+# def compute_metrics(pred):
+#     labels = pred.label_ids
+#     preds = pred.predictions.argmax(-1)
 
-    Args:
-        pred (Tuple[torch.Tensor, torch.Tensor]):
-                - logits (torch.Tensor): Model output logits of shape [batch_size, seq_len, vocab_size].
-                - labels (torch.Tensor): Ground-truth token labels of shape [batch_size, seq_len].
-        tokenizer (PreTrainedTokenizerBase):
-            A tokenizer instance used to compute the character-level length.
+#     print(labels)
+#     print(preds)
 
-    Returns:
-        Dict[str, float]:
-            - "ppl" (float): Perplexity of the batch.
-            - "bpc" (float): Bits per character of the batch.
-    """
+#     print(labels.shape)
+#     print(preds.shape)
+#     # Calculate accuracy
+#     # accuracy = accuracy_score(labels, preds)
+#     # print(accuracy)
+#     return {"blep": }
 
-    logits, labels = pred
-    mask = (
-        labels != -100
-    )  # -100 is the default ignore index for padding in Hugging Face#
-    labels = labels[mask]
-    logits = logits[mask]
 
-    print(labels)
-    print(logits)
-
-    probs = torch.nn.functional.softmax(logits, dim=-1)
-    true_probs = probs[torch.arange(len(labels)), labels]
-
-    nll = -torch.log(true_probs).mean().item()
-    perplexity = exp(nll)
-
-    total_chars = sum(
-        len(tokenizer.decode([label])) for label in labels
-    )  # going from token id to token and then to chars
-    bpc = ln(perplexity) / ln(2) * (len(labels) / total_chars)
-
-    return {"ppl": float(perplexity), "bpc": float(bpc)}
+# def compute_metrics(eval_pred):
+#     """
+#     Compute perplexity directly from logits and labels.
+#     """
+#     logits, labels = eval_pred
+#     # Convert logits to probabilities
+#     probs = torch.nn.functional.log_softmax(torch.tensor(logits), dim=-1)
+#     # Gather the log probabilities of the correct labels
+#     labels = torch.tensor(labels)
+#     # Mask to ignore padding or special tokens
+#     mask = labels != -100  # Assuming -100 is the ignored index
+#     nll_loss = -probs[range(labels.shape[0]), labels] * mask
+#     mean_loss = nll_loss.sum() / mask.sum()
+#     perplexity = exp(mean_loss.item())
+#     print(f"{perplexity}")
+#     return {"perplexity": perplexity}

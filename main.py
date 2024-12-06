@@ -63,13 +63,12 @@ def main(args):
             processed_dataset, processed_training_size = preprocess_dataset(
                 dataset, language
             )
-            
-            if mode == 'eval':
-                ...
-                continue#
-                
 
-            save_stats_dataset(dataset, dataset_results_folder, language)
+            if mode == "eval":
+                ...
+                continue
+
+            save_stats_dataset(processed_dataset, dataset_results_folder, language)
 
             for tokenizer_name in args.tokenizer_types:
                 for vocab_size in args.vocab_sizes:
@@ -101,7 +100,7 @@ def main(args):
                         print("=" * 50)
 
                         tokenizer = train_tokenizer(
-                            dataset,
+                            processed_dataset,
                             tokenizer_name,
                             vocab_size,
                             UNK_TOKEN,
@@ -109,73 +108,66 @@ def main(args):
                             tokenizer_file,
                         )
                         tokenized_dataset = tokenize_dataset(
-                            dataset, tokenizer, MAX_LENGTH
+                            processed_dataset, tokenizer, MAX_LENGTH
                         )
-                
-                config = BertConfig.from_pretrained(
-                        TINYBERT_CONFIG, vocab_size=vocab_size
-                    )
-                model = AutoModelForMaskedLM.from_config(config)
 
-                max_steps = (
-                    int(processed_training_size / args.batch_size / 8) * args.epochs
-                )
-                print(f"Max steps: {max_steps}")
-                trainer = create_mlm_trainer(
-                    tokenizer,
-                    model,
-                    tokenized_dataset,
-                    model_folder,
-                    args.batch_size,
-                    args.learning_rate,
-                    args.wandb_run_name,
-                    args.epochs,
-                    max_steps,
-                )
-                torch.cuda.empty_cache()
-                trainer.train()
-                save_num_params(model, model_results_folder)
+                        config = BertConfig.from_pretrained(
+                            TINYBERT_CONFIG, vocab_size=vocab_size
+                        )
+                        model = AutoModelForMaskedLM.from_config(config)
 
-            elif mode == "eval":
-                print("=" * 50)
-                print(f"Start Evaluation with configuration:")
-                print(f"Language: {language}")
-                print(f"Tokenizer Type: {tokenizer_name}")
-                print(f"Vocabulary Size: {vocab_size}")
-                print(f"Training Size: {training_size}")
-                print("=" * 50)
+                        max_steps = (
+                            int(processed_training_size / args.batch_size) * args.epochs
+                        )
+                        print(f"Max steps: {max_steps}")
+                        trainer = create_mlm_trainer(
+                            tokenizer,
+                            model,
+                            tokenized_dataset,
+                            model_folder,
+                            args.batch_size,
+                            args.learning_rate,
+                            args.wandb_run_name,
+                            args.epochs,
+                            max_steps,
+                        )
+                        torch.cuda.empty_cache()
+                        trainer.train()
+                        save_num_params(model, model_results_folder)
 
-                checkpoints = [
-                    d
-                    for d in os.listdir(model_folder)
-                    if d.startswith("checkpoint-")
-                ]
-                print(
-                    f"There are {len(checkpoints)} checkpoints for {model_folder}"
-                )
-                checkpoint_dir = os.path.join(
-                    model_folder, checkpoints[0]
-                )  # using the first checkpoint
+                    elif mode == "eval":
+                        print("=" * 50)
+                        print(f"Start Evaluation with configuration:")
+                        print(f"Language: {language}")
+                        print(f"Tokenizer Type: {tokenizer_name}")
+                        print(f"Vocabulary Size: {vocab_size}")
+                        print(f"Training Size: {training_size}")
+                        print("=" * 50)
 
-                model = DistilBertForMaskedLM.from_pretrained(
-                    checkpoint_dir
-                )
-                tokenizer = PreTrainedTokenizerFast.from_pretrained(
-                    checkpoint_dir
-                )
-                model.eval()
+                        checkpoints = [
+                            d
+                            for d in os.listdir(model_folder)
+                            if d.startswith("checkpoint-")
+                        ]
+                        print(
+                            f"There are {len(checkpoints)} checkpoints for {model_folder}"
+                        )
+                        checkpoint_dir = os.path.join(
+                            model_folder, checkpoints[0]
+                        )  # using the first checkpoint
 
-                bpc = eval_bpc(
-                    model, tokenizer, dataset, dataset_size=training_size
-                )
-                
-                
-                
-                
-                
-                
+                        model = AutoModelForMaskedLM.from_pretrained(checkpoint_dir)
 
-              return
+                        tokenizer = PreTrainedTokenizerFast.from_pretrained(
+                            checkpoint_dir
+                        )
+                        model.eval()
+
+                        bpc = eval_bpc(
+                            model, tokenizer, dataset, dataset_size=training_size
+                        )
+
+    return
 
 
 if __name__ == "__main__":
