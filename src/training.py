@@ -50,11 +50,10 @@ def add_arguments(parser):
     )
     parser.add_argument(
         "-ts",
-        "--training-sizes",
+        "--training-size",
         type=int,
-        nargs="+",
-        default=[100000],
-        help="Training sizes for the tokenizers. Provide one or more values, e.g., 1000 5000.",
+        default=10000,
+        help="Training size for the tokenizer. Provide a single value, e.g., 1000.",
     )
     parser.add_argument(
         "-e",

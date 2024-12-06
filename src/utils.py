@@ -1,5 +1,6 @@
 import json
 import os
+import time
 
 from datasets import load_dataset
 from datasets import IterableDataset
@@ -46,6 +47,13 @@ def dataset_text_iterator(dataset: IterableDataset):
         yield sample["text"]
 
 
+def text_normalise(text: str) -> str:
+    """Normalizes the text by removing newlines and converting it to lowercase."""
+    text = text.replace("\n", "")
+    text = text.lower()
+    return text
+
+
 def detect_language(text: str, target_language: str) -> bool:
     """Detects the language of the text and returns whether it matches the target language."""
 
@@ -58,26 +66,36 @@ def detect_language(text: str, target_language: str) -> bool:
         return False
 
 
-def preprocess(
-    dataset: IterableDataset, target_language: str, training_size: int
-) -> IterableDataset:
-    """Filters the dataset by language and ensures the result is an IterableDataset."""
+def preprocess_dataset(
+    dataset: IterableDataset, target_language: str
+) -> tuple[IterableDataset, int]:
+    """Preprocess dataset and filter by language."""
+    start_time = time.time()
 
     def generator():
-        processed_training_size = 0
+        nonlocal processed_training_size
         for example in dataset_text_iterator(dataset):
+            example = text_normalise(example)
 
             if detect_language(example, target_language):
-                yield {"text": example}
                 processed_training_size += 1
+                yield {"text": example}
 
-    # Return as an IterableDataset
-    return IterableDataset.from_generator(generator), processed_training_size
+    processed_training_size = 0
+    processed_dataset = IterableDataset.from_generator(generator)
+    list(processed_dataset)
 
-    ...
+    end_time = time.time()
+    processing_time = end_time - start_time
+    print(f"Preprocessing time: {processing_time:.2f} seconds")
+    print(f"Processed dataset size: {processed_training_size}")
+
+    return processed_dataset, processed_training_size
 
 
-def save_stats_dataset(dataset: IterableDataset, results_folder: str) -> None:
+def save_stats_dataset(
+    dataset: IterableDataset, results_folder: str, language: str
+) -> None:
     """
     Counts and saves the total number of words in the dataset, the size of the dataset in MB, and the number of examples.
 
@@ -116,7 +134,7 @@ def save_stats_dataset(dataset: IterableDataset, results_folder: str) -> None:
 
     results_file = os.path.join(
         results_folder,
-        f"dataset_stats.json",
+        f"dataset_stats{language}_.json",
     )
 
     with open(results_file, "w") as f:
