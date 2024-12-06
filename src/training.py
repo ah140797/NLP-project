@@ -191,7 +191,7 @@ def compute_bpc(
     logits, labels = pred
     mask = (
         labels != -100
-    )  # -100 is the default ignore index for padding in Hugging Face
+    )  # -100 is the default ignore index for padding in Hugging Face#
     labels = labels[mask]
     logits = logits[mask]
 
