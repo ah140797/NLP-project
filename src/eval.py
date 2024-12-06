@@ -1,7 +1,7 @@
 from transformers import PreTrainedModel, PreTrainedTokenizerFast
 from datasets import Dataset
 import torch
-import tqdm
+from tqdm import tqdm
 
 from math import exp, log
 
@@ -17,7 +17,9 @@ def eval_bpc(
     total_tokens = []
     total_characters = []
 
-    for example in tqdm(dataset, total=dataset_size):
+    for example in tqdm(
+        dataset, total=dataset_size, desc="Processing examples", unit="example"
+    ):
 
         n_chars = len(example["text"])
         total_characters += n_chars
