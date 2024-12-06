@@ -4,12 +4,8 @@ import os
 import argparse
 
 import torch
-import numpy as np
 
-import torch
-
-from transformers import DistilBertForMaskedLM, DistilBertConfig
-
+from transformers import BertConfig, AutoModelForMaskedLM
 
 from huggingface_hub import login
 import wandb
@@ -94,8 +90,10 @@ def main(args):
                     )
                     tokenized_dataset = tokenize_dataset(dataset, tokenizer, MAX_LENGTH)
 
-                    configuration = DistilBertConfig(vocab_size=vocab_size)
-                    model = DistilBertForMaskedLM(configuration)
+                    config = BertConfig.from_pretrained(
+                        "huawei-noah/TinyBERT_General_4L_312D", vocab_size=vocab_size
+                    )
+                    model = AutoModelForMaskedLM.from_config(config)
 
                     max_steps = int(training_size / args.batch_size / 8) * args.epochs
                     print(f"Max steps: {max_steps}")
