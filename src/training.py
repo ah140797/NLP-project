@@ -60,7 +60,7 @@ def add_arguments(parser):
         "-e",
         "--epochs",
         type=int,
-        default=10,
+        default=1,
         help="Number of training epochs.",
     )
     parser.add_argument(
