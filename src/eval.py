@@ -36,13 +36,16 @@ def eval_bpc(
         with torch.no_grad():
             outputs = model(**inputs, labels=inputs["input_ids"])
             nll_loss = outputs.loss.item()
-            nll_losses.append(torch.tensor(nll_loss))
+            nll_losses.append(nll_loss)
 
-    averaged_nll = (torch.cat(nll_losses).sum() / total_tokens).item()
+    # Calculate average NLL and perplexity
+    total_nll_loss = sum(nll_losses)  # Sum of all NLL losses
+    averaged_nll = total_nll_loss / total_tokens
     perplexity = exp(averaged_nll)
 
     print(f"Tokens: {total_tokens}")
     print(f"Characters: {total_characters}")
+    print(f"Perplexity {perplexity}")
 
     bpc = (total_tokens / total_characters) * (log(perplexity) / log(2))
     print(f"BPC {bpc}")
