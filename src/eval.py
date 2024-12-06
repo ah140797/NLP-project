@@ -36,14 +36,14 @@ def eval_bpc(
 
         with torch.no_grad():
             outputs = model(**inputs, labels=inputs["input_ids"])
-            print(f"outputs: {outputs}")
+            # print(f"outputs: {outputs}")
             nll_loss = outputs.loss.item()
             print(f"NLL_LOSS {nll_loss}")
             nll_losses.append(nll_loss)
 
             # match
             perplexity = exp(nll_loss)
-
+            print(perplexity)
             perplexities.append(perplexity)
 
     # Calculate average NLL and perplexity
