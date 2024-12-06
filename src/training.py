@@ -15,7 +15,7 @@ TOKENIZER_UNI = "Unigram"
 def add_arguments(parser):
     parser.add_argument(
         "-m",
-        "--mode",
+        "--modes",
         type=str,
         nargs="+",  # Allow multiple languages
         choices=["train", "eval"],  # "es" for Spanish, "tr" for Turkish
