@@ -27,6 +27,9 @@ def eval_bpc(
         inputs = tokenizer(
             example["text"], return_tensors="pt", truncation=True, max_length=512
         )  # This is a 1 x n_tokens batch.
+        inputs = {
+            key: value for key, value in inputs.items() if key != "token_type_ids"
+        }
         n_tokens = inputs.input_ids.size(1)
         total_tokens += n_tokens
 
