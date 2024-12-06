@@ -9,4 +9,5 @@ tokenizers
 accelerate
 wandb
 datasets
+fast-langdetect
 

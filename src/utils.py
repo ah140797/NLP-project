@@ -6,6 +6,8 @@ from datasets import IterableDataset
 import torch
 from torch import nn
 
+from fast_langdetect import detect
+
 
 def get_oscar_dataset(language: str, training_size: int) -> IterableDataset:
     """Loads the OSCAR dataset in streaming-mode (iteratabledataset) for a specified language and training size.
@@ -42,6 +44,37 @@ def dataset_text_iterator(dataset: IterableDataset):
     """
     for sample in dataset:
         yield sample["text"]
+
+
+def detect_language(text: str, target_language: str) -> bool:
+    """Detects the language of the text and returns whether it matches the target language."""
+
+    try:
+        detected_lang = detect(text)["lang"]
+        return detected_lang == target_language  # returns true if they are the same
+
+    except Exception as e:
+        print(f"Error detecting language: {e}")
+        return False
+
+
+def preprocess(
+    dataset: IterableDataset, target_language: str, training_size: int
+) -> IterableDataset:
+    """Filters the dataset by language and ensures the result is an IterableDataset."""
+
+    def generator():
+        processed_training_size = 0
+        for example in dataset_text_iterator(dataset):
+
+            if detect_language(example, target_language):
+                yield {"text": example}
+                processed_training_size += 1
+
+    # Return as an IterableDataset
+    return IterableDataset.from_generator(generator), processed_training_size
+
+    ...
 
 
 def save_stats_dataset(dataset: IterableDataset, results_folder: str) -> None:
