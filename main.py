@@ -4,15 +4,7 @@ import os
 import argparse
 
 import torch
-import numpy as np
-
-import torch
-
-from transformers import (
-    DistilBertForMaskedLM,
-    DistilBertConfig,
-    PreTrainedTokenizerFast,
-)
+from transformers import BertConfig, AutoModelForMaskedLM, PreTrainedTokenizerFast
 
 from huggingface_hub import login
 import wandb
@@ -37,6 +29,7 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 
 
 HUGGINGFACE_TOKEN = "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"
+TINYBERT_CONFIG = "huawei-noah/TinyBERT_General_4L_312D"
 
 UNK_TOKEN = "[UNK]"
 SPL_TOKENS = ["[PAD]", "[CLS]", "[SEP]", "[MASK]"] + [UNK_TOKEN]
@@ -95,6 +88,7 @@ def main(args):
                         ALL_RESULTS_FOLDER,
                         f"{language}_{tokenizer_name}_vs{vocab_size}_ts{processed_training_size}",
                     )
+
                     os.makedirs(model_results_folder, exist_ok=True)
 
                     if mode == "train":
@@ -117,12 +111,14 @@ def main(args):
                         tokenized_dataset = tokenize_dataset(
                             dataset, tokenizer, MAX_LENGTH
                         )
-
-                configuration = DistilBertConfig(vocab_size=vocab_size)
-                model = DistilBertForMaskedLM(configuration)
+                
+                config = BertConfig.from_pretrained(
+                        TINYBERT_CONFIG, vocab_size=vocab_size
+                    )
+                model = AutoModelForMaskedLM.from_config(config)
 
                 max_steps = (
-                    int(training_size / args.batch_size / 8) * args.epochs
+                    int(processed_training_size / args.batch_size / 8) * args.epochs
                 )
                 print(f"Max steps: {max_steps}")
                 trainer = create_mlm_trainer(
@@ -179,7 +175,7 @@ def main(args):
                 
                 
 
-            # return
+              return
 
 
 if __name__ == "__main__":
