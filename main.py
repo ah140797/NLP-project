@@ -73,6 +73,7 @@ def main(args):
             
             if mode == 'eval':
                 ...
+                continue
                 
 
             save_stats_dataset(dataset, dataset_results_folder, language)
