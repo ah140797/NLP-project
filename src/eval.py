@@ -14,8 +14,8 @@ def eval_bpc(
 ) -> tuple[float, int]:
 
     nll_losses = []
-    total_tokens = []
-    total_characters = []
+    total_tokens = 0
+    total_characters = 0
 
     for example in tqdm(
         dataset, total=dataset_size, desc="Processing examples", unit="example"
