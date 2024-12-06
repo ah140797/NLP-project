@@ -1,6 +1,6 @@
 from transformers import Trainer, TrainingArguments, DataCollatorForLanguageModeling
 from transformers import PreTrainedTokenizerFast
-from transformers import DistilBertForMaskedLM
+from transformers import AutoModelForMaskedLM
 from datasets import IterableDataset
 
 TOKENIZER_BPE = "BPE"
@@ -75,7 +75,7 @@ def add_arguments(parser):
 
 def create_mlm_trainer(
     tokenizer: PreTrainedTokenizerFast,
-    model: DistilBertForMaskedLM,
+    model: AutoModelForMaskedLM,
     tokenized_dataset: IterableDataset,
     model_file: str,
     batch_size: int,
@@ -89,7 +89,7 @@ def create_mlm_trainer(
 
     Args:
         tokenizer (PreTrainedTokenizerFast): The tokenizer used to process the data.
-        model (DistilBertForMaskedLM): The model to train.
+        model (AutoModelForMaskedLM): The model to train.
         tokenized_dataset (IterableDataset): The tokenized dataset for training.
         model_file (str): The file path to save the model.
         batch_size (int): The batch size for training.
