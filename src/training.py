@@ -14,6 +14,15 @@ TOKENIZER_UNI = "Unigram"
 
 def add_arguments(parser):
     parser.add_argument(
+        "-m",
+        "--mode",
+        type=str,
+        nargs="+",  # Allow multiple languages
+        choices=["train", "eval"],  # "es" for Spanish, "tr" for Turkish
+        default=["train"],  # Default to Spanish if no language is specified
+        help="Whether to train or evaluate a model. Defaults to ['train'].",
+    )
+    parser.add_argument(
         "-l",
         "--languages",
         type=str,
