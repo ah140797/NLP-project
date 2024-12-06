@@ -65,14 +65,11 @@ def main(args):
                 for vocab_size in args.vocab_sizes:
                     for training_size in args.training_sizes:
 
-
                         dataset = get_oscar_dataset(language, training_size)
-                        
-                        #processed_dataset, processed_training_size = preprocess()
-                        
-                        
-                        
-                         tokenizer_file = os.path.join(
+
+                        # processed_dataset, processed_training_size = preprocess()
+
+                        tokenizer_file = os.path.join(
                             ALL_TOKENIZERS_FOLDER,
                             f"tokenizer_{language}_{tokenizer_name}_vs{vocab_size}_ts{training_size}.json",
                         )
@@ -87,8 +84,7 @@ def main(args):
                             f"{language}_{tokenizer_name}_vs{vocab_size}_ts{training_size}",
                         )
                         os.makedirs(results_folder, exist_ok=True)
-                        
-                        
+
                         save_stats_dataset(dataset, results_folder)
 
                         if mode == "train":
