@@ -32,7 +32,8 @@ def eval_bpc(
             key: value for key, value in inputs.items() if key != "token_type_ids"
         }
         print(inputs)
-        n_tokens = inputs.input_ids.size(1)
+        n_tokens = inputs["input_ids"].size(1)
+        print(n_tokens)
         total_tokens += n_tokens
 
         with torch.no_grad():
