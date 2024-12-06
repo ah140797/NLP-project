@@ -16,6 +16,7 @@ def eval_bpc(
     nll_losses = []
     total_tokens = 0
     total_characters = 0
+    perplexities = []  # match
 
     for example in tqdm(
         dataset, total=dataset_size, desc="Processing examples", unit="example"
@@ -35,19 +36,29 @@ def eval_bpc(
 
         with torch.no_grad():
             outputs = model(**inputs, labels=inputs["input_ids"])
+            print(f"outputs: {outputs}")
             nll_loss = outputs.loss.item()
+            print(f"NLL_LOSS {nll_loss}")
             nll_losses.append(nll_loss)
+
+            # match
+            perplexity = exp(nll_loss)
+
+            perplexities.append(perplexity)
 
     # Calculate average NLL and perplexity
     total_nll_loss = sum(nll_losses)  # Sum of all NLL losses
     averaged_nll = total_nll_loss / total_tokens
-    perplexity = exp(averaged_nll)
+    perplexity_ = exp(averaged_nll)
 
     print(f"Tokens: {total_tokens}")
     print(f"Characters: {total_characters}")
-    print(f"Perplexity {perplexity}")
+    print(f"Perplexity method 1 {perplexity_}")
 
-    bpc = (total_tokens / total_characters) * (log(perplexity) / log(2))
+    perplexity_match = sum(perplexities) / len(perplexities)
+    print(f"Perplexity method 2 {perplexity_match}")
+
+    bpc = (total_tokens / total_characters) * (log(perplexity_) / log(2))
     print(f"BPC {bpc}")
 
     return bpc
