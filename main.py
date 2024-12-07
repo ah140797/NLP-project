@@ -15,6 +15,7 @@ from src.utils import (
     save_stats_dataset,
     save_num_params,
     get_available_device,
+    load_model_from_checkpoint,
 )
 
 from src.tokenization import train_tokenizer, tokenize_dataset
@@ -48,40 +49,40 @@ def main(args):
     wandb.login()
     os.environ["WANDB_LOG_MODEL"] = "checkpoint"
 
-    training_size = args.training_size
+    dataset_size = args.dataset_size
 
-    for mode in args.modes:
-        for language in args.languages:
-            dataset_results_folder = os.path.join(
-                ALL_RESULTS_FOLDER,
-                f"dataset_stats_{language}",
-            )
-            os.makedirs(dataset_results_folder, exist_ok=True)
+    for language in args.languages:
+        dataset_results_folder = os.path.join(
+            ALL_RESULTS_FOLDER,
+            f"dataset_stats_{language}",
+        )
+        os.makedirs(dataset_results_folder, exist_ok=True)
 
-            dataset = get_oscar_dataset(language, training_size)
+        dataset = get_oscar_dataset(language, dataset_size)
 
-            processed_dataset, processed_training_size = preprocess_dataset(
-                dataset, language
-            )
+        processed_dataset, processed_dataset_size = preprocess_dataset(
+            dataset, language
+        )
 
-            save_stats_dataset(processed_dataset, dataset_results_folder, language)
+        save_stats_dataset(processed_dataset, dataset_results_folder, language)
 
+        for mode in args.modes:
             for tokenizer_name in args.tokenizer_types:
                 for vocab_size in args.vocab_sizes:
 
                     tokenizer_file = os.path.join(
                         ALL_TOKENIZERS_FOLDER,
-                        f"tokenizer_{language}_{tokenizer_name}_vs{vocab_size}_ts{processed_training_size}.json",
+                        f"tokenizer_{language}_{tokenizer_name}_vs{vocab_size}_ts{processed_dataset_size}.json",
                     )
 
                     model_folder = os.path.join(
                         ALL_MODELS_FOLDER,
-                        f"model_{language}_{tokenizer_name}_vs{vocab_size}_ts{processed_training_size}",
+                        f"model_{language}_{tokenizer_name}_vs{vocab_size}_ts{processed_dataset_size}",
                     )
 
                     model_results_folder = os.path.join(
                         ALL_RESULTS_FOLDER,
-                        f"{language}_{tokenizer_name}_vs{vocab_size}_ts{processed_training_size}",
+                        f"{language}_{tokenizer_name}_vs{vocab_size}_ts{processed_dataset_size}",
                     )
 
                     os.makedirs(model_results_folder, exist_ok=True)
@@ -92,7 +93,7 @@ def main(args):
                         print(f"Language: {language}")
                         print(f"Tokenizer Type: {tokenizer_name}")
                         print(f"Vocabulary Size: {vocab_size}")
-                        print(f"Training Size (Processed): {processed_training_size}")
+                        print(f"Dataset Size (Processed): {processed_dataset_size}")
                         print("=" * 50)
 
                         tokenizer = train_tokenizer(
@@ -113,7 +114,7 @@ def main(args):
                         model = AutoModelForMaskedLM.from_config(config)
 
                         max_steps = (
-                            int(processed_training_size / args.batch_size) * args.epochs
+                            int(processed_dataset_size / args.batch_size) * args.epochs
                         )
                         print(f"Max steps: {max_steps}")
                         trainer = create_mlm_trainer(
@@ -137,20 +138,10 @@ def main(args):
                         print(f"Language: {language}")
                         print(f"Tokenizer Type: {tokenizer_name}")
                         print(f"Vocabulary Size: {vocab_size}")
-                        print(f"Training Size: {training_size}")
+                        print(f"Dataset Size (Processed): {processed_dataset_size}")
                         print("=" * 50)
 
-                        checkpoints = [
-                            d
-                            for d in os.listdir(model_folder)
-                            if d.startswith("checkpoint-")
-                        ]
-                        print(
-                            f"There are {len(checkpoints)} checkpoints for {model_folder}"
-                        )
-                        checkpoint_dir = os.path.join(
-                            model_folder, checkpoints[0]
-                        )  # using the first checkpoint
+                        checkpoint_dir = load_model_from_checkpoint(model_folder)
 
                         model = AutoModelForMaskedLM.from_pretrained(checkpoint_dir)
 
@@ -163,7 +154,7 @@ def main(args):
                             model,
                             tokenizer,
                             processed_dataset,
-                            processed_training_size,
+                            processed_dataset_size,
                             model_results_folder,
                         )
 

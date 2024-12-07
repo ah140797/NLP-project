@@ -50,8 +50,8 @@ def add_arguments(parser):
         help="Vocabulary sizes for the trained tokenizers. Provide one or more values, e.g., 1000 2000.",
     )
     parser.add_argument(
-        "-ts",
-        "--training-size",
+        "-s",
+        "--dataset-size",
         type=int,
         default=10000,
         help="Training size for the tokenizer. Provide a single value, e.g., 1000.",
@@ -177,7 +177,7 @@ def create_mlm_trainer(
         warmup_ratio=0.01,
         logging_dir="./logs",
         save_strategy="steps",
-        logging_steps=1,
+        logging_steps=10,
         use_cpu=False,
         fp16=True,
         report_to="wandb",

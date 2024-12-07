@@ -21,7 +21,7 @@ def eval_bpc_ppl(
     total_characters = 0
 
     for example in tqdm(
-        dataset, total=dataset_size, desc="Processing examples", unit="example"
+        dataset, total=dataset_size, desc="Computing BPC", unit="example"
     ):
 
         n_chars = len(example["text"])

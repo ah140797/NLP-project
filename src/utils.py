@@ -189,3 +189,27 @@ def get_available_device():
         device = torch.device("cpu")
         # returning to correctly handle batch size.
         return device, 1
+
+
+def load_model_from_checkpoint(model_folder: str) -> str:
+    """Loads from from local checkpoint. Loads the checkpoint with the higher number.
+
+    Args:
+        model_folder (str): model folder with may contain multiple checkpoints.
+
+    Returns:
+        str: returns the checkpoint with the highest number
+    """
+    checkpoints = [d for d in os.listdir(model_folder) if d.startswith("checkpoint-")]
+    print(f"There are len{checkpoints} in {model_folder}")
+
+    if not checkpoints:
+        print(f"No checkpoints found in {model_folder}")
+        exit()
+
+    # Find the checkpoint with the highest step number
+    checkpoints = sorted(checkpoints, key=lambda x: int(x.split("-")[-1]), reverse=True)
+    checkpoint_dir = os.path.join(model_folder, checkpoints[0])
+    print(f"Using the following checkpoint: {checkpoint_dir}")
+
+    return checkpoint_dir
