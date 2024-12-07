@@ -7,7 +7,6 @@ import torch
 from math import exp
 from math import log as ln
 
-from .custom_trainer import CustomTrainer, CustomCallback
 
 TOKENIZER_BPE = "BPE"
 TOKENIZER_WPC = "WordPiece"
