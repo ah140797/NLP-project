@@ -195,7 +195,7 @@ def create_mlm_trainer(
         model=model,
         args=training_args,
         train_dataset=tokenized_dataset,
-        eval_dataset=tokenized_dataset,
+        # eval_dataset=tokenized_dataset,
         tokenizer=tokenizer,
         data_collator=data_collator,
         # compute_metrics=compute_bpc,
