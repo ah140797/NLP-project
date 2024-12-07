@@ -4,14 +4,17 @@ import torch
 from tqdm import tqdm
 
 from math import exp, log
+import json
+import os
 
 
-def eval_bpc(
+def eval_bpc_ppl(
     model: PreTrainedModel,
     tokenizer: PreTrainedTokenizerFast,
     dataset: Dataset,
-    dataset_size: int = None,
-) -> tuple[float, int]:
+    dataset_size: int,
+    model_results_folder: str,
+) -> float:
 
     nll_losses = []
     total_tokens = 0
@@ -30,6 +33,7 @@ def eval_bpc(
         inputs = {
             key: value for key, value in inputs.items() if key != "token_type_ids"
         }
+
         n_tokens = inputs["input_ids"].size(1)
         total_tokens += n_tokens
 
@@ -38,16 +42,26 @@ def eval_bpc(
             nll_loss = outputs.loss.item()
             nll_losses.append(nll_loss)
 
-    print(f"# NLL Losses {len(nll_losses)}")
     # Calculate average NLL and perplexity
     averaged_nll = sum(nll_losses) / len(nll_losses)
     perplexity = exp(averaged_nll)
-
-    print(f"Tokens: {total_tokens}")
-    print(f"Characters: {total_characters}")
-    print(f"Perplexity method {perplexity}")
-
     bpc = (total_tokens / total_characters) * (log(perplexity) / log(2))
-    print(f"BPC {bpc}")
+
+    results = {
+        "bpc": bpc,
+        "perplexity": perplexity,
+        "averaged_nll": averaged_nll,
+        "total tokens": total_tokens,
+        "total characters": total_characters,
+        "dataset size": dataset_size,
+    }
+
+    results_file = os.path.join(
+        model_results_folder,
+        f"bpc_eval.json",
+    )
+
+    with open(results_file, "w") as f:
+        json.dump(results, f, indent=4)
 
     return bpc

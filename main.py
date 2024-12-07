@@ -21,7 +21,7 @@ from src.tokenization import train_tokenizer, tokenize_dataset
 
 from src.training import add_arguments, create_mlm_trainer
 
-from src.eval import eval_bpc
+from src.eval import eval_bpc_ppl
 
 import warnings
 
@@ -54,7 +54,7 @@ def main(args):
         for language in args.languages:
             dataset_results_folder = os.path.join(
                 ALL_RESULTS_FOLDER,
-                f"dataset_stats {language}",
+                f"dataset_stats_{language}",
             )
             os.makedirs(dataset_results_folder, exist_ok=True)
 
@@ -63,10 +63,6 @@ def main(args):
             processed_dataset, processed_training_size = preprocess_dataset(
                 dataset, language
             )
-
-            if mode == "eval":
-                ...
-                continue
 
             save_stats_dataset(processed_dataset, dataset_results_folder, language)
 
@@ -163,8 +159,12 @@ def main(args):
                         )
                         model.eval()
 
-                        bpc = eval_bpc(
-                            model, tokenizer, dataset, dataset_size=training_size
+                        bpc = eval_bpc_ppl(
+                            model,
+                            tokenizer,
+                            processed_dataset,
+                            processed_training_size,
+                            model_results_folder,
                         )
 
     return

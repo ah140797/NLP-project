@@ -188,8 +188,8 @@ def create_mlm_trainer(
         learning_rate=learning_rate,
         num_train_epochs=train_epochs,
         max_steps=max_steps,
-        evaluation_strategy="steps",
-        per_device_eval_batch_size=batch_size,
+        # evaluation_strategy="steps",
+        # per_device_eval_batch_size=batch_size,
     )
 
     trainer = Trainer(
@@ -199,44 +199,8 @@ def create_mlm_trainer(
         eval_dataset=tokenized_dataset,
         tokenizer=tokenizer,
         data_collator=data_collator,
-        compute_metrics=compute_bpc,
+        # compute_metrics=compute_bpc,
     )
 
     # trainer.add_callback(CustomCallback(trainer))
     return trainer
-
-
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
-
-
-# def compute_metrics(pred):
-#     labels = pred.label_ids
-#     preds = pred.predictions.argmax(-1)
-
-#     print(labels)
-#     print(preds)
-
-#     print(labels.shape)
-#     print(preds.shape)
-#     # Calculate accuracy
-#     # accuracy = accuracy_score(labels, preds)
-#     # print(accuracy)
-#     return {"blep": }
-
-
-# def compute_metrics(eval_pred):
-#     """
-#     Compute perplexity directly from logits and labels.
-#     """
-#     logits, labels = eval_pred
-#     # Convert logits to probabilities
-#     probs = torch.nn.functional.log_softmax(torch.tensor(logits), dim=-1)
-#     # Gather the log probabilities of the correct labels
-#     labels = torch.tensor(labels)
-#     # Mask to ignore padding or special tokens
-#     mask = labels != -100  # Assuming -100 is the ignored index
-#     nll_loss = -probs[range(labels.shape[0]), labels] * mask
-#     mean_loss = nll_loss.sum() / mask.sum()
-#     perplexity = exp(mean_loss.item())
-#     print(f"{perplexity}")
-#     return {"perplexity": perplexity}

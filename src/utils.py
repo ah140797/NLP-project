@@ -134,7 +134,7 @@ def save_stats_dataset(
 
     results_file = os.path.join(
         results_folder,
-        f"dataset_stats{language}_.json",
+        f"dataset_stats_{language}.json",
     )
 
     with open(results_file, "w") as f:
