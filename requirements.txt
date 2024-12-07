@@ -3,3 +3,11 @@ pandas
 torch
 huggingface
 tqdm
+transformers
+scikit-learn
+tokenizers
+accelerate
+wandb
+datasets
+fast-langdetect
+
