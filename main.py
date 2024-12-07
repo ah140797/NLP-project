@@ -113,8 +113,8 @@ def main(args):
                             TINYBERT_CONFIG, vocab_size=vocab_size
                         )
                         model = AutoModelForMaskedLM.from_config(config)
-                        # if n_gpu > 1:
-                        #    model = nn.DataParallel(model)
+                        if n_gpu > 1:
+                            model = nn.DataParallel(model)
 
                         max_steps = (
                             int(processed_dataset_size / args.batch_size) * args.epochs
