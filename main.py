@@ -117,8 +117,7 @@ def main(args):
                         #    model = nn.DataParallel(model)
 
                         max_steps = (
-                            int(processed_dataset_size / args.batch_size / 8)
-                            * args.epochs
+                            int(processed_dataset_size / args.batch_size) * args.epochs
                         )
                         print(f"Max steps: {max_steps}")
                         trainer = create_mlm_trainer(
