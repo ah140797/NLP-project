@@ -84,6 +84,7 @@ def main(args):
                     model_results_folder = os.path.join(
                         ALL_RESULTS_FOLDER,
                         f"{language}_{tokenizer_name}_vs{vocab_size}_ts{processed_dataset_size}",
+                        
                     )
 
                     os.makedirs(model_results_folder, exist_ok=True)
