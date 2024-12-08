@@ -1,7 +1,18 @@
-from transformers import Trainer, TrainingArguments, DataCollatorForLanguageModeling
+from transformers import (
+    Trainer,
+    TrainingArguments,
+    DataCollatorForLanguageModeling,
+    trainer_callback,
+)
 from transformers import PreTrainedTokenizerFast
 from transformers import AutoModelForMaskedLM
 from datasets import IterableDataset
+
+import torch
+from torch.nn.functional import cross_entropy
+from copy import deepcopy
+from math import log as ln
+
 
 TOKENIZER_BPE = "BPE"
 TOKENIZER_WPC = "WordPiece"
@@ -73,6 +84,21 @@ def add_arguments(parser):
     )
 
 
+class CustomCallback(trainer_callback.TrainerCallback):
+
+    def __init__(self, trainer) -> None:
+        super().__init__()
+        self._trainer = trainer
+
+    def on_step_end(self, args, state, control, **kwargs):
+        if control.should_log:
+            control_copy = deepcopy(control)
+            self._trainer.evaluate(
+                eval_dataset=self._trainer.train_dataset, metric_key_prefix="model"
+            )
+            return control_copy
+
+
 def create_mlm_trainer(
     tokenizer: PreTrainedTokenizerFast,
     model: AutoModelForMaskedLM,
@@ -101,6 +127,40 @@ def create_mlm_trainer(
     Returns:
         Trainer: The configured Trainer instance.
     """
+
+    def compute_metrics(eval_pred):
+        """Computes the perplexity metric for language modeling.
+
+        Args:
+            eval_pred (EvalPrediction): The evaluation prediction object from the Trainer.
+
+        Returns:
+            dict: A dictionary containing the perplexity metric.
+        """
+        nonlocal tokenizer
+
+        logits = torch.tensor(eval_pred.predictions)
+        labels = torch.tensor(eval_pred.label_ids)
+
+        # Convert logits to probabilities
+        mask = (
+            labels != -100
+        )  # -100 is the default ignore index for padding in Hugging Face#
+
+        labels = labels[mask]
+        logits = logits[mask]
+
+        probs = cross_entropy(logits, labels)
+
+        # Calculate perplexity
+        perplexity = torch.exp(probs)
+
+        total_no_tokens = labels.size(0)
+
+        total_chars = sum(len(tokenizer.decode([label])) for label in labels)
+
+        bpc = ln(perplexity) / ln(2) * (total_no_tokens / total_chars)
+        return {"perplexity": perplexity.item(), "bpc": bpc}
 
     data_collator = DataCollatorForLanguageModeling(
         tokenizer=tokenizer, mlm=True, mlm_probability=0.15, return_tensors="pt"
@@ -134,6 +194,8 @@ def create_mlm_trainer(
         train_dataset=tokenized_dataset,
         tokenizer=tokenizer,
         data_collator=data_collator,
+        compute_metrics=compute_metrics,
     )
 
+    trainer.add_callback(CustomCallback(trainer))
     return trainer

@@ -95,7 +95,7 @@ def main(args):
                     )
                     model = AutoModelForMaskedLM.from_config(config)
 
-                    max_steps = int(training_size / args.batch_size / 8) * args.epochs
+                    max_steps = int(training_size / args.batch_size) * args.epochs
                     print(f"Max steps: {max_steps}")
                     trainer = create_mlm_trainer(
                         tokenizer,
