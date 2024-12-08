@@ -114,7 +114,7 @@ def main(args):
                         )
                         model = AutoModelForMaskedLM.from_config(config)
                         # if n_gpu > 1:
-                        #    model = nn.DataParallel(model)
+                        #    model = nn.DataParallel(model) # did not work
 
                         max_steps = (
                             int(processed_dataset_size / args.batch_size) * args.epochs

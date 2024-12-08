@@ -115,57 +115,6 @@ def create_mlm_trainer(
         Trainer: The configured Trainer instance.
     """
 
-    def compute_bpc(pred: tuple[torch.tensor, torch.tensor]) -> dict[str, float]:
-        """
-        Calculates Perplexity (PPL) and Bits Per Character (BPC) for a batch.
-
-        Args:
-            pred (Tuple[torch.Tensor, torch.Tensor]):
-                    - logits (torch.Tensor): Model output logits of shape [batch_size, seq_len, vocab_size].
-                    - labels (torch.Tensor): Ground-truth token labels of shape [batch_size, seq_len].
-            tokenizer (PreTrainedTokenizerBase):
-                A tokenizer instance used to compute the character-level length.
-
-        Returns:
-            Dict[str, float]:
-                - "ppl" (float): Perplexity of the batch.
-                - "bpc" (float): Bits per character of the batch.
-        """
-        nonlocal tokenizer
-        logits, labels = pred
-        logits = torch.tensor(logits)
-        labels = torch.tensor(labels)
-
-        print(logits.shape)
-        print(labels.shape)
-
-        mask = (
-            labels != -100
-        )  # -100 is the default ignore index for padding in Hugging Face#
-        labels = labels[mask]
-        logits = logits[mask]
-
-        print(labels)
-        print(logits)
-        print(logits.shape)
-        print(labels.shape)
-
-        probs = torch.nn.functional.softmax(logits, dim=-1)
-        print(probs.shape)
-        true_probs = probs[torch.arange(len(labels)), labels]
-
-        nll = -torch.log(true_probs).mean().item()
-        perplexity = exp(nll)
-        print(nll)
-        print(perplexity)
-
-        total_chars = sum(
-            len(tokenizer.decode([label])) for label in labels
-        )  # going from token id to token and then to chars
-        bpc = ln(perplexity) / ln(2) * (len(labels) / total_chars)
-
-        return {"ppl": float(perplexity), "bpc": float(bpc)}
-
     data_collator = DataCollatorForLanguageModeling(
         tokenizer=tokenizer, mlm=True, mlm_probability=0.15, return_tensors="pt"
     )
@@ -177,7 +126,7 @@ def create_mlm_trainer(
         warmup_ratio=0.01,
         logging_dir="./logs",
         save_strategy="steps",
-        logging_steps=10,
+        logging_steps=1,
         use_cpu=False,
         fp16=True,
         report_to="wandb",
