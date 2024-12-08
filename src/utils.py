@@ -1,10 +1,13 @@
 import json
 import os
+import time
 
 from datasets import load_dataset
 from datasets import IterableDataset
 import torch
 from torch import nn
+
+from fast_langdetect import detect
 
 
 def get_oscar_dataset(language: str, training_size: int) -> IterableDataset:
@@ -21,7 +24,7 @@ def get_oscar_dataset(language: str, training_size: int) -> IterableDataset:
         "oscar-corpus/oscar",
         language=language,
         streaming=True,
-        split="train",  # optional, but the dataset only has a train split
+        split="train",  # optional, but the dataset only has a train split#
         trust_remote_code=True,
     )
 
@@ -44,7 +47,55 @@ def dataset_text_iterator(dataset: IterableDataset):
         yield sample["text"]
 
 
-def save_stats_dataset(dataset: IterableDataset, results_folder: str) -> None:
+def text_normalise(text: str) -> str:
+    """Normalizes the text by removing newlines and converting it to lowercase."""
+    text = text.replace("\n", "")
+    text = text.lower()
+    return text
+
+
+def detect_language(text: str, target_language: str) -> bool:
+    """Detects the language of the text and returns whether it matches the target language."""
+
+    try:
+        detected_lang = detect(text)["lang"]
+        return detected_lang == target_language  # returns true if they are the same
+
+    except Exception as e:
+        print(f"Error detecting language: {e}")
+        return False
+
+
+def preprocess_dataset(
+    dataset: IterableDataset, target_language: str
+) -> tuple[IterableDataset, int]:
+    """Preprocess dataset and filter by language."""
+    start_time = time.time()
+
+    def generator():
+        nonlocal processed_training_size
+        for example in dataset_text_iterator(dataset):
+            example = text_normalise(example)
+
+            if detect_language(example, target_language):
+                processed_training_size += 1
+                yield {"text": example}
+
+    processed_training_size = 0
+    processed_dataset = IterableDataset.from_generator(generator)
+    list(processed_dataset)
+
+    end_time = time.time()
+    processing_time = end_time - start_time
+    print(f"Preprocessing time: {processing_time:.2f} seconds")
+    print(f"Processed dataset size: {processed_training_size}")
+
+    return processed_dataset, processed_training_size
+
+
+def save_stats_dataset(
+    dataset: IterableDataset, results_folder: str, language: str
+) -> None:
     """
     Counts and saves the total number of words in the dataset, the size of the dataset in MB, and the number of examples.
 
@@ -83,7 +134,7 @@ def save_stats_dataset(dataset: IterableDataset, results_folder: str) -> None:
 
     results_file = os.path.join(
         results_folder,
-        f"dataset_stats.json",
+        f"dataset_stats_{language}.json",
     )
 
     with open(results_file, "w") as f:
@@ -138,3 +189,27 @@ def get_available_device():
         device = torch.device("cpu")
         # returning to correctly handle batch size.
         return device, 1
+
+
+def load_model_from_checkpoint(model_folder: str) -> str:
+    """Loads from from local checkpoint. Loads the checkpoint with the higher number.
+
+    Args:
+        model_folder (str): model folder with may contain multiple checkpoints.
+
+    Returns:
+        str: returns the checkpoint with the highest number
+    """
+    checkpoints = [d for d in os.listdir(model_folder) if d.startswith("checkpoint-")]
+    print(f"There are len{checkpoints} in {model_folder}")
+
+    if not checkpoints:
+        print(f"No checkpoints found in {model_folder}")
+        exit()
+
+    # Find the checkpoint with the highest step number
+    checkpoints = sorted(checkpoints, key=lambda x: int(x.split("-")[-1]), reverse=True)
+    checkpoint_dir = os.path.join(model_folder, checkpoints[0])
+    print(f"Using the following checkpoint: {checkpoint_dir}")
+
+    return checkpoint_dir

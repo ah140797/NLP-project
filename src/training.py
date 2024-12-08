@@ -7,6 +7,11 @@ from transformers import (
 from transformers import PreTrainedTokenizerFast
 from transformers import AutoModelForMaskedLM
 from datasets import IterableDataset
+import torch
+
+from math import exp
+from math import log as ln
+
 
 import torch
 from torch.nn.functional import cross_entropy
@@ -20,6 +25,15 @@ TOKENIZER_UNI = "Unigram"
 
 
 def add_arguments(parser):
+    parser.add_argument(
+        "-m",
+        "--modes",
+        type=str,
+        nargs="+",  # Allow multiple languages
+        choices=["train", "eval"],  # "es" for Spanish, "tr" for Turkish
+        default=["train"],  # Default to Spanish if no language is specified
+        help="Whether to train or evaluate a model. Defaults to ['train'].",
+    )
     parser.add_argument(
         "-l",
         "--languages",
@@ -47,18 +61,17 @@ def add_arguments(parser):
         help="Vocabulary sizes for the trained tokenizers. Provide one or more values, e.g., 1000 2000.",
     )
     parser.add_argument(
-        "-ts",
-        "--training-sizes",
+        "-s",
+        "--dataset-size",
         type=int,
-        nargs="+",
-        default=[100000],
-        help="Training sizes for the tokenizers. Provide one or more values, e.g., 1000 5000.",
+        default=10000,
+        help="Training size for the tokenizer. Provide a single value, e.g., 1000.",
     )
     parser.add_argument(
         "-e",
         "--epochs",
         type=int,
-        default=10,
+        default=1,
         help="Number of training epochs.",
     )
     parser.add_argument(
@@ -173,19 +186,18 @@ def create_mlm_trainer(
         warmup_ratio=0.01,
         logging_dir="./logs",
         save_strategy="steps",
-        logging_steps=10,
+        logging_steps=4,
         use_cpu=False,
         fp16=True,
         report_to="wandb",
-        gradient_accumulation_steps=8,
+        # gradient_accumulation_steps=8,
         run_name=run_name,
         per_device_train_batch_size=batch_size,
         learning_rate=learning_rate,
         num_train_epochs=train_epochs,
         max_steps=max_steps,
-        # load_best_model_at_end=True,
-        # eval_strategy="steps",
-        # eval_steps=1,
+        # evaluation_strategy="steps",
+        # per_device_eval_batch_size=batch_size,
     )
 
     trainer = Trainer(
