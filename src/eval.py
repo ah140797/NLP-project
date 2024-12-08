@@ -7,7 +7,6 @@ from math import exp, log
 import json
 import os
 
-
 def eval_bpc_ppl(
     model: PreTrainedModel,
     tokenizer: PreTrainedTokenizerFast,
@@ -65,3 +64,92 @@ def eval_bpc_ppl(
         json.dump(results, f, indent=4)
 
     return bpc
+
+def calculate_eval_metrics(
+    tokenizer: PreTrainedTokenizerFast,
+    dataset: Dataset,
+    model_results_folder: str,
+    ) -> None:
+
+    num_chars = []
+    num_words = []
+    num_tokens = []
+    
+   for example in ds_spa:
+        # number of charcters excluding whitespace
+        n_chars = len(''.join(example['text'].split()))
+        # number of words (*count commas as one word*)
+        n_words = len(example['text'].replace(",", " , ").split())
+
+        # Calculate number of tokens
+        inputs = tokenizer(
+            example["text"], return_tensors="pt", truncation=True, max_length=512
+        )  
+        n_tokens = inputs['input_ids'].size(1)
+
+        num_chars.append(n_chars)
+        num_words.append(n_words)
+        num_tokens.append(n_tokens)
+
+    # calculate LPT (Length per Tokens)
+    lpt = [n_chars/n_tokens for n_chars, n_tokens in zip(num_chars, num_tokens)]
+
+    # calculate fertility
+    fertility = [n_tokens/n_words for n_tokens, n_words in zip(num_tokens, num_words)]
+
+    results = {
+        "num_chars": num_chars,
+        "num_words": num_words,
+        "num_tokens": num_tokens,
+        "lpt": lpt,
+        "fertility": fertility,
+    }
+
+    results_file = os.path.join(
+        model_results_folder,
+        "eval_metrics.json",
+    )
+
+    with open(results_file, "w") as f:
+        json.dump(results, f, indent=4)
+
+def calculate_parity(
+    languages: list,
+    tokenizer_types: list,
+    vocab_sizes: list
+    ) -> None:
+    for tokenizer_name in tokenizer_types:
+        for vocab_size in vocab_sizes:
+            num_tokens = []
+            # Load the results from calculate_eval_metrics
+            for language in languages:
+                model_results_folder = f"results/{language}_{tokenizer_name}_vs{vocab_size}"
+                model_results_path = os.path.join(
+                    model_results_folder,
+                    'eval_metrics.json'
+                    )
+                with open(model_results_path) as f:
+                    results = json.load(f)
+                num_tokens.append(results["num_tokens"])
+
+            parity = [num_tokens1/num_tokens2 for num_tokens1, num_tokens2 in zip(num_tokens[0], num_tokens[1])]
+
+            results = {
+                "parity": parity,
+            }
+
+            results_path = os.path.join(
+                    model_results_folder,
+                    'parity.json'
+                    )
+
+            with open(results_path, "w") as f:
+                json.dump(results, f, indent=4)
+
+
+
+
+
+
+
+    
