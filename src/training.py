@@ -214,10 +214,11 @@ def create_mlm_trainer(
         model=model,
         args=training_args,
         train_dataset=tokenized_dataset,
+        evaldataset=tokenized_dataset,
         tokenizer=tokenizer,
         data_collator=data_collator,
         compute_metrics=compute_metrics,
     )
 
-    trainer.add_callback(CustomCallback(trainer))
+    # trainer.add_callback(CustomCallback(trainer))
     return trainer
