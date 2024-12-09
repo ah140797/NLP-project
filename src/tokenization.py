@@ -5,7 +5,7 @@ from tokenizers.trainers import (
     WordPieceTrainer,
     UnigramTrainer,
 )
-from transformers import PreTrainedTokenizer
+from transformers import PreTrainedTokenizerFast
 from datasets import IterableDataset
 
 from src.utils import dataset_text_iterator
@@ -43,6 +43,18 @@ def prepare_tokenizer_trainer(
         )
     elif alg == TOKENIZER_UNI:
         tokenizer = Tokenizer(Unigram())
+        from tokenizers import Regex
+        from tokenizers import normalizers
+
+        tokenizer.normalizer = normalizers.Sequence(
+            [
+                normalizers.Replace("``", '"'),
+                normalizers.Replace("''", '"'),
+                normalizers.NFKD(),
+                normalizers.Replace(Regex(" {2,}"), " "),
+            ]
+        )
+
         trainer = UnigramTrainer(
             unk_token=unk_token, special_tokens=spl_tokens, vocab_size=vocabulary_size
         )
@@ -61,7 +73,7 @@ def train_tokenizer(
     unk_token: str,
     spl_tokens: list[str],
     tokenizer_file: str,
-) -> PreTrainedTokenizer:
+) -> PreTrainedTokenizerFast:
     """
     Trains a tokenizer on the given dataset and saves it to a file.
 
@@ -83,7 +95,7 @@ def train_tokenizer(
     tokenizer.train_from_iterator(dataset_text_iterator(dataset), trainer)
     tokenizer.save(tokenizer_file)
 
-    tokenizer = PreTrainedTokenizer(tokenizer_file=tokenizer_file)
+    tokenizer = PreTrainedTokenizerFast(tokenizer_file=tokenizer_file)
     tokenizer.add_special_tokens(
         {
             "pad_token": "[PAD]",
@@ -98,7 +110,7 @@ def train_tokenizer(
 
 
 def tokenize_dataset(
-    dataset: IterableDataset, tokenizer: PreTrainedTokenizer, max_length: int
+    dataset: IterableDataset, tokenizer: PreTrainedTokenizerFast, max_length: int
 ) -> IterableDataset:
     """
     Tokenize and truncate the input dataset.
