@@ -49,7 +49,9 @@ def main(args):
     login(HUGGINGFACE_TOKEN)
     wandb.login()
     os.environ["WANDB_LOG_MODEL"] = "checkpoint"
-    os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+    os.environ["PYTORCH_CUDA_ALLOC_CONF"] = (
+        "expandable_segments:True"  # remove allocated memory thats not in use
+    )
 
     dataset_size = args.dataset_size
 

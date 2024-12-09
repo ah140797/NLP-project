@@ -112,10 +112,12 @@ class CustomCallback(trainer_callback.TrainerCallback):
 
     def on_step_end(self, args, state, control, **kwargs):
         if control.should_log:
+            self._trainer.model.eval()
             control_copy = deepcopy(control)
             self._trainer.evaluate(
                 eval_dataset=self._trainer.train_dataset, metric_key_prefix="model"
             )
+            self._trainer.model.train()
             return control_copy
 
 
