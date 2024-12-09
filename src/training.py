@@ -113,10 +113,11 @@ class CustomCallback(trainer_callback.TrainerCallback):
     def on_step_end(self, args, state, control, **kwargs):
         if control.should_log:
             self._trainer.model = self._trainer.model.eval()
-            control_copy = deepcopy(control)
-            self._trainer.evaluate(
-                eval_dataset=self._trainer.train_dataset, metric_key_prefix="model"
-            )
+            with torch.no_grad():
+                control_copy = deepcopy(control)
+                self._trainer.evaluate(
+                    eval_dataset=self._trainer.train_dataset, metric_key_prefix="model"
+                )
             self._trainer.model = self._trainer.model.train()
             return control_copy
 
@@ -214,7 +215,7 @@ def create_mlm_trainer(
         model=model,
         args=training_args,
         train_dataset=tokenized_dataset,
-        #eval_dataset=tokenized_dataset,
+        # eval_dataset=tokenized_dataset,
         tokenizer=tokenizer,
         data_collator=data_collator,
         compute_metrics=compute_metrics,
