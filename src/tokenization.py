@@ -43,18 +43,6 @@ def prepare_tokenizer_trainer(
         )
     elif alg == TOKENIZER_UNI:
         tokenizer = Tokenizer(Unigram())
-        from tokenizers import Regex
-        from tokenizers import normalizers
-
-        tokenizer.normalizer = normalizers.Sequence(
-            [
-                normalizers.Replace("``", '"'),
-                normalizers.Replace("''", '"'),
-                normalizers.NFKD(),
-                normalizers.Replace(Regex(" {2,}"), " "),
-            ]
-        )
-
         trainer = UnigramTrainer(
             unk_token=unk_token, special_tokens=spl_tokens, vocab_size=vocabulary_size
         )
