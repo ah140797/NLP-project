@@ -112,13 +112,13 @@ class CustomCallback(trainer_callback.TrainerCallback):
 
     def on_step_end(self, args, state, control, **kwargs):
         if control.should_log:
-            self._trainer.model = self._trainer.model.eval()
+            self._trainer.model.module = self._trainer.model.module.eval()
             with torch.no_grad():
                 control_copy = deepcopy(control)
                 self._trainer.evaluate(
                     eval_dataset=self._trainer.train_dataset, metric_key_prefix="model"
                 )
-            self._trainer.model = self._trainer.model.train()
+            self._trainer.model.module = self._trainer.model.module.train()
             return control_copy
 
 
