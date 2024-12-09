@@ -24,6 +24,7 @@ def get_oscar_dataset(language: str, training_size: int) -> IterableDataset:
         "oscar-corpus/oscar",
         language=language,
         streaming=True,
+        deduplicated=True,
         split="train",  # optional, but the dataset only has a train split#
         trust_remote_code=True,
     )
@@ -51,6 +52,7 @@ def text_normalise(text: str) -> str:
     """Normalizes the text by removing newlines and converting it to lowercase."""
     text = text.replace("\n", "")
     text = text.lower()
+    text = " ".join(text.split())  # whitespace normalization
     return text
 
 
