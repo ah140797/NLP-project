@@ -209,6 +209,7 @@ def create_mlm_trainer(
         learning_rate=learning_rate,
         num_train_epochs=train_epochs,
         gradient_accumulation_steps=gradient_accumulation,
+        eval_accumulation_steps=1,
         max_steps=max_steps,
         batch_eval_metrics=True,  # ensures that we get same batch size in eval
         # evaluation_strategy="steps",
