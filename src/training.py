@@ -227,6 +227,7 @@ def create_mlm_trainer(
         tokenizer=tokenizer,
         data_collator=data_collator,
         compute_metrics=compute_metrics,
+        preprocess_logits_for_metrics=preprocess_logits_for_metrics,
     )
 
     # trainer.add_callback(CustomCallback(trainer))
