@@ -207,19 +207,19 @@ def create_mlm_trainer(
         num_train_epochs=train_epochs,
         gradient_accumulation_steps=gradient_accumulation,
         max_steps=max_steps,
-        # evaluation_strategy="steps",
-        # per_device_eval_batch_size=batch_size,
+        evaluation_strategy="steps",
+        per_device_eval_batch_size=batch_size,
     )
 
     trainer = Trainer(
         model=model,
         args=training_args,
         train_dataset=tokenized_dataset,
-        # eval_dataset=tokenized_dataset,
+        eval_dataset=tokenized_dataset,
         tokenizer=tokenizer,
         data_collator=data_collator,
         compute_metrics=compute_metrics,
     )
 
-    trainer.add_callback(CustomCallback(trainer))
+    # trainer.add_callback(CustomCallback(trainer))
     return trainer
