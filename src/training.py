@@ -186,6 +186,14 @@ def create_mlm_trainer(
         bpc = ln(perplexity) / ln(2) * (total_no_tokens / total_chars)
         return {"perplexity": perplexity.item(), "bpc": bpc}
 
+    def preprocess_logits_for_metrics(logits, labels):
+        """
+        Original Trainer may have a memory leak.
+        This is a workaround to avoid storing too many tensors that are not needed.
+        """
+        pred_ids = torch.argmax(logits[0], dim=-1)
+        return pred_ids, labels
+
     data_collator = DataCollatorForLanguageModeling(
         tokenizer=tokenizer, mlm=True, mlm_probability=0.15, return_tensors="pt"
     )
