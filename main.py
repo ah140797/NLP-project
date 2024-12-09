@@ -49,6 +49,7 @@ def main(args):
     login(HUGGINGFACE_TOKEN)
     wandb.login()
     os.environ["WANDB_LOG_MODEL"] = "checkpoint"
+    os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 
     dataset_size = args.dataset_size
 
@@ -84,7 +85,6 @@ def main(args):
                     model_results_folder = os.path.join(
                         ALL_RESULTS_FOLDER,
                         f"{language}_{tokenizer_name}_vs{vocab_size}_ts{processed_dataset_size}",
-                        
                     )
 
                     os.makedirs(model_results_folder, exist_ok=True)
