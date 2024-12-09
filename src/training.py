@@ -220,5 +220,5 @@ def create_mlm_trainer(
         compute_metrics=compute_metrics,
     )
 
-    # trainer.add_callback(CustomCallback(trainer))
+    trainer.add_callback(CustomCallback(trainer))
     return trainer
