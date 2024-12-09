@@ -112,13 +112,10 @@ class CustomCallback(trainer_callback.TrainerCallback):
 
     def on_step_end(self, args, state, control, **kwargs):
         if control.should_log:
-            self._trainer.model = self._trainer.model.eval()
-            with torch.no_grad():
-                control_copy = deepcopy(control)
-                self._trainer.evaluate(
-                    eval_dataset=self._trainer.train_dataset, metric_key_prefix="model"
-                )
-            self._trainer.model = self._trainer.model.train()
+            control_copy = deepcopy(control)
+            self._trainer.evaluate(
+                eval_dataset=self._trainer.train_dataset, metric_key_prefix="model"
+            )
             return control_copy
 
 
@@ -152,7 +149,7 @@ def create_mlm_trainer(
         Trainer: The configured Trainer instance.
     """
 
-    def compute_metrics(eval_pred):
+    def compute_metrics(eval_pred, compute_result=True):
         """Computes the perplexity metric for language modeling.
 
         Args:
@@ -162,13 +159,11 @@ def create_mlm_trainer(
             dict: A dictionary containing the perplexity metric.
         """
         nonlocal tokenizer
-        logits = torch.tensor(eval_pred.predictions[0])
+        logits = torch.tensor(eval_pred.predictions)
         labels = torch.tensor(eval_pred.label_ids)
 
         # Convert logits to probabilities
-        mask = (
-            labels != -100
-        )  # -100 is the default ignore index for padding in Hugging Face#
+        mask = labels != -100
 
         labels = labels[mask]
         logits = logits[mask]
@@ -190,7 +185,8 @@ def create_mlm_trainer(
         Original Trainer may have a memory leak.
         This is a workaround to avoid storing too many tensors that are not needed.
         """
-        pred_ids = torch.argmax(logits[0], dim=-1)
+        pred_ids = torch.argmax(logits, dim=-1)  # argmax over vocab
+
         return pred_ids, labels
 
     data_collator = DataCollatorForLanguageModeling(
@@ -204,7 +200,7 @@ def create_mlm_trainer(
         warmup_ratio=0.05,
         logging_dir="./logs",
         save_strategy="steps",
-        logging_steps=2,
+        logging_steps=1,
         use_cpu=False,
         fp16=True,
         report_to="wandb",
@@ -214,6 +210,7 @@ def create_mlm_trainer(
         num_train_epochs=train_epochs,
         gradient_accumulation_steps=gradient_accumulation,
         max_steps=max_steps,
+        batch_eval_metrics=True,  # ensures that we get same batch size in eval
         evaluation_strategy="steps",
         per_device_eval_batch_size=batch_size,
     )
@@ -222,12 +219,12 @@ def create_mlm_trainer(
         model=model,
         args=training_args,
         train_dataset=tokenized_dataset,
-        eval_dataset=tokenized_dataset,
+        # eval_dataset=tokenized_dataset,
         tokenizer=tokenizer,
         data_collator=data_collator,
         compute_metrics=compute_metrics,
-        preprocess_logits_for_metrics=preprocess_logits_for_metrics,
+        # preprocess_logits_for_metrics=preprocess_logits_for_metrics,
     )
 
-    # trainer.add_callback(CustomCallback(trainer))
+    trainer.add_callback(CustomCallback(trainer))
     return trainer
