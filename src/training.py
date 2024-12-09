@@ -180,14 +180,14 @@ def create_mlm_trainer(
         bpc = ln(perplexity) / ln(2) * (total_no_tokens / total_chars)
         return {"perplexity": perplexity.item(), "bpc": bpc}
 
-    def preprocess_logits_for_metrics(logits, labels):
-        """
-        Original Trainer may have a memory leak.
-        This is a workaround to avoid storing too many tensors that are not needed.
-        """
-        pred_ids = torch.argmax(logits, dim=-1)  # argmax over vocab
+    # def preprocess_logits_for_metrics(logits, labels):
+    #     """
+    #     Original Trainer may have a memory leak.
+    #     This is a workaround to avoid storing too many tensors that are not needed.
+    #     """
+    #     pred_ids = torch.argmax(logits, dim=-1)  # argmax over vocab
 
-        return pred_ids, labels
+    #   return pred_ids, labels
 
     data_collator = DataCollatorForLanguageModeling(
         tokenizer=tokenizer, mlm=True, mlm_probability=0.15, return_tensors="pt"
@@ -212,7 +212,7 @@ def create_mlm_trainer(
         eval_accumulation_steps=gradient_accumulation,
         max_steps=max_steps,
         batch_eval_metrics=True,  # ensures that we get same batch size in eval
-        # evaluation_strategy="steps",
+        evaluation_strategy="steps",
         per_device_eval_batch_size=batch_size,
     )
 
@@ -220,12 +220,12 @@ def create_mlm_trainer(
         model=model,
         args=training_args,
         train_dataset=tokenized_dataset,
-        # eval_dataset=tokenized_dataset,
+        eval_dataset=tokenized_dataset,
         tokenizer=tokenizer,
         data_collator=data_collator,
         compute_metrics=compute_metrics,
         # preprocess_logits_for_metrics=preprocess_logits_for_metrics,
     )
 
-    trainer.add_callback(CustomCallback(trainer))
+    # trainer.add_callback(CustomCallback(trainer))
     return trainer
