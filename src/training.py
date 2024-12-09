@@ -29,9 +29,9 @@ def add_arguments(parser):
         "-m",
         "--modes",
         type=str,
-        nargs="+",  # Allow multiple languages
-        choices=["train", "eval"],  # "es" for Spanish, "tr" for Turkish
-        default=["train"],  # Default to Spanish if no language is specified
+        nargs="+",
+        choices=["train", "eval"],
+        default=["train"],
         help="Whether to train or evaluate a model. Defaults to ['train'].",
     )
     parser.add_argument(
@@ -89,7 +89,7 @@ def add_arguments(parser):
         help="Learning rate for training.",
     )
     parser.add_argument(
-        "-wandb",
+        "-n",
         "--wandb-run-name",
         type=str,
         default="tokenizer_run",
@@ -188,7 +188,7 @@ def create_mlm_trainer(
         save_strategy="steps",
         logging_steps=4,
         use_cpu=False,
-        fp16=True,
+        # fp16=True,
         report_to="wandb",
         # gradient_accumulation_steps=8,
         run_name=run_name,
