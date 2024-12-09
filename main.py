@@ -119,7 +119,12 @@ def main(args):
                             model = nn.DistributedDataParallel(model)
 
                         max_steps = (
-                            int(processed_dataset_size / args.batch_size) * args.epochs
+                            int(
+                                processed_dataset_size
+                                / args.batch_size
+                                / args.gradient_accumulation
+                            )
+                            * args.epochs
                         )
                         print(f"Max steps: {max_steps}")
                         trainer = create_mlm_trainer(
@@ -131,6 +136,7 @@ def main(args):
                             args.learning_rate,
                             args.wandb_run_name,
                             args.epochs,
+                            args.gradient_accumulation,
                             max_steps,
                         )
                         torch.cuda.empty_cache()

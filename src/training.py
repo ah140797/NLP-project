@@ -89,6 +89,13 @@ def add_arguments(parser):
         help="Learning rate for training.",
     )
     parser.add_argument(
+        "-ga",
+        "--gradient-accumulation",
+        type=int,
+        default=2,
+        help="Gradient accumulation for training.",
+    )
+    parser.add_argument(
         "-n",
         "--wandb-run-name",
         type=str,
@@ -121,6 +128,7 @@ def create_mlm_trainer(
     learning_rate: float,
     run_name: str,
     train_epochs: int,
+    gradient_accumulation: int,
     max_steps: int,
 ):
     """
@@ -186,15 +194,15 @@ def create_mlm_trainer(
         warmup_ratio=0.05,
         logging_dir="./logs",
         save_strategy="steps",
-        logging_steps=4,
+        logging_steps=2,
         use_cpu=False,
         fp16=True,
         report_to="wandb",
-        gradient_accumulation_steps=2,
         run_name=run_name,
         per_device_train_batch_size=batch_size,
         learning_rate=learning_rate,
         num_train_epochs=train_epochs,
+        gradient_accumulation_steps=gradient_accumulation,
         max_steps=max_steps,
         # evaluation_strategy="steps",
         # per_device_eval_batch_size=batch_size,
