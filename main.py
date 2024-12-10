@@ -93,9 +93,9 @@ def main(args):
 
                     os.makedirs(model_results_folder, exist_ok=True)
 
-                    if mode == "train":
+                    if mode == "traintoken":
                         print("=" * 50)
-                        print(f"Start Training with configuration:")
+                        print(f"Start Tokenizer Training:")
                         print(f"Language: {language}")
                         print(f"Tokenizer Type: {tokenizer_name}")
                         print(f"Vocabulary Size: {vocab_size}")
@@ -109,6 +109,19 @@ def main(args):
                             UNK_TOKEN,
                             SPL_TOKENS,
                             tokenizer_file,
+                        )
+
+                    elif mode == "train":
+                        print("=" * 50)
+                        print(f"Start Training with configuration:")
+                        print(f"Language: {language}")
+                        print(f"Tokenizer Type: {tokenizer_name}")
+                        print(f"Vocabulary Size: {vocab_size}")
+                        print(f"Dataset Size (Processed): {processed_dataset_size}")
+                        print("=" * 50)
+
+                        tokenizer = tokenizer = PreTrainedTokenizerFast.from_pretrained(
+                            tokenizer_file
                         )
                         tokenized_dataset = tokenize_dataset(
                             processed_dataset, tokenizer, MAX_LENGTH

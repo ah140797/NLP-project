@@ -31,7 +31,7 @@ def add_arguments(parser):
         "--modes",
         type=str,
         nargs="+",
-        choices=["train", "eval"],
+        choices=["traintoken", "train", "eval"],
         default=["train"],
         help="Whether to train or evaluate a model. Defaults to ['train'].",
     )
