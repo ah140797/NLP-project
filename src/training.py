@@ -17,6 +17,7 @@ import torch
 from torch.nn.functional import cross_entropy
 from copy import deepcopy
 from math import log as ln
+from itertools import islice
 
 
 TOKENIZER_BPE = "BPE"
@@ -182,14 +183,27 @@ def create_mlm_trainer(
         bpc = ln(perplexity) / ln(2) * (total_no_tokens / total_chars)
         return {"perplexity": perplexity.item(), "bpc": bpc}
 
-    # def preprocess_logits_for_metrics(logits, labels):
-    #     """
-    #     Original Trainer may have a memory leak.
-    #     This is a workaround to avoid storing too many tensors that are not needed.
-    #     """
-    #     pred_ids = torch.argmax(logits, dim=-1)  # argmax over vocab
+    def dataset_batch_generator(iterable_dataset, batch_size):
+        """
+        Generator to yield batches of size `batch_size` from an IterableDataset.
 
-    #   return pred_ids, labels
+        Args:
+            iterable_dataset (IterableDataset): The dataset to generate batches from.
+            batch_size (int): The number of examples per batch.
+
+        Yields:
+            list: A batch of examples.
+        """
+        dataset_iterator = iter(iterable_dataset)
+        while True:
+            batch = list(islice(dataset_iterator, batch_size))
+            if not batch:
+                break
+            yield batch
+
+    eval_dataset_gen = dataset_batch_generator(
+        tokenized_dataset, batch_size * gradient_accumulation * 5
+    )
 
     data_collator = DataCollatorForLanguageModeling(
         tokenizer=tokenizer, mlm=True, mlm_probability=0.15, return_tensors="pt"
@@ -201,8 +215,8 @@ def create_mlm_trainer(
         lr_scheduler_type="linear",
         warmup_ratio=0.05,
         logging_dir="./logs",
-        save_strategy="steps",
-        logging_steps=1,
+        save_strategy="epoch",
+        logging_steps=5,
         use_cpu=False,
         fp16=True,
         report_to="wandb",
@@ -222,7 +236,7 @@ def create_mlm_trainer(
         model=model,
         args=training_args,
         train_dataset=tokenized_dataset,
-        eval_dataset=tokenized_dataset,
+        eval_dataset=next(eval_dataset_gen),
         tokenizer=tokenizer,
         data_collator=data_collator,
         compute_metrics=compute_metrics,
@@ -231,3 +245,12 @@ def create_mlm_trainer(
 
     # trainer.add_callback(CustomCallback(trainer))
     return trainer
+
+    # def preprocess_logits_for_metrics(logits, labels):
+    #     """
+    #     Original Trainer may have a memory leak.
+    #     This is a workaround to avoid storing too many tensors that are not needed.
+    #     """
+    #     pred_ids = torch.argmax(logits, dim=-1)  # argmax over vocab
+
+    #   return pred_ids, labels
