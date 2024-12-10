@@ -211,9 +211,9 @@ def create_mlm_trainer(
         gradient_accumulation_steps=gradient_accumulation,
         eval_accumulation_steps=gradient_accumulation,
         max_steps=max_steps,
-        batch_eval_metrics=True,  # ensures that we get same batch size in eval
+        # batch_eval_metrics=True,  # ensures that we get same batch size in eval
         # evaluation_strategy="steps",
-        per_device_eval_batch_size=batch_size,
+        # per_device_eval_batch_size=batch_size,
     )
 
     trainer = Trainer(
@@ -223,7 +223,7 @@ def create_mlm_trainer(
         # eval_dataset=tokenized_dataset,
         tokenizer=tokenizer,
         data_collator=data_collator,
-        compute_metrics=compute_metrics,
+        # compute_metrics=compute_metrics,
         # preprocess_logits_for_metrics=preprocess_logits_for_metrics,
     )
 
