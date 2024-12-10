@@ -175,8 +175,10 @@ def create_mlm_trainer(
         perplexity = torch.exp(probs)
 
         total_no_tokens = labels.size(0)
+        print(labels)
         print(total_no_tokens)
         total_chars = sum(len(tokenizer.decode([label])) for label in labels)
+        print(tokenizer.decode(labels[0]))
         print(total_chars)
 
         bpc = ln(perplexity) / ln(2) * (total_no_tokens / total_chars)
