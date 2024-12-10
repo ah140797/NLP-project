@@ -6,6 +6,7 @@ import argparse
 import torch
 from torch import nn
 from transformers import BertConfig, AutoModelForMaskedLM, PreTrainedTokenizerFast
+from tokenizers import Tokenizer
 
 from huggingface_hub import login
 import wandb
@@ -124,9 +125,7 @@ def main(args):
                         print(f"Dataset Size (Processed): {processed_dataset_size}")
                         print("=" * 50)
 
-                        tokenizer = tokenizer = PreTrainedTokenizerFast.from_pretrained(
-                            tokenizer_file
-                        )
+                        tokenizer = tokenizer = Tokenizer.from_file(tokenizer_file)
                         tokenized_dataset = tokenize_dataset(
                             processed_dataset, tokenizer, MAX_LENGTH
                         )
