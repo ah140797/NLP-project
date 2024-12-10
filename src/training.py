@@ -160,7 +160,6 @@ def create_mlm_trainer(
             dict: A dictionary containing the perplexity metric.
         """
         nonlocal tokenizer
-        print(eval_pred.shape)
         print(eval_pred)
         logits = torch.tensor(eval_pred.predictions)
         labels = torch.tensor(eval_pred.label_ids)
