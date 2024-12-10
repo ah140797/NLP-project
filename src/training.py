@@ -227,5 +227,5 @@ def create_mlm_trainer(
         # preprocess_logits_for_metrics=preprocess_logits_for_metrics,
     )
 
-    trainer.add_callback(CustomCallback(trainer))
+    # trainer.add_callback(CustomCallback(trainer))
     return trainer
