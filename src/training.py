@@ -163,8 +163,6 @@ def create_mlm_trainer(
         logits = torch.tensor(eval_pred.predictions)
         labels = torch.tensor(eval_pred.label_ids)
 
-        print(logits.shape)
-        print(labels.shape)
         # Convert logits to probabilities
         mask = labels != -100
 
@@ -225,7 +223,7 @@ def create_mlm_trainer(
         learning_rate=learning_rate,
         num_train_epochs=train_epochs,
         gradient_accumulation_steps=gradient_accumulation,
-        eval_accumulation_steps=gradient_accumulation,
+        # eval_accumulation_steps=gradient_accumulation,
         max_steps=max_steps,
         batch_eval_metrics=True,  # ensures that we get same batch size in eval
         evaluation_strategy="steps",
