@@ -33,6 +33,7 @@ def prepare_tokenizer_trainer(
             - Tokenizer object: A tokenizer instance (BPE, WordPiece, or Unigram).
             - Trainer object: The corresponding trainer object (BpeTrainer, WordPieceTrainer, or UnigramTrainer) based on the algorithm.
     """
+
     if alg == TOKENIZER_BPE:
         tokenizer = Tokenizer(BPE(unk_token=unk_token))
         trainer = BpeTrainer(special_tokens=spl_tokens, vocab_size=vocabulary_size)
@@ -82,17 +83,18 @@ def train_tokenizer(
     )
     tokenizer.train_from_iterator(dataset_text_iterator(dataset), trainer)
     tokenizer.save(tokenizer_file)
+    tokenizer = Tokenizer.from_file(tokenizer_file)
 
-    tokenizer = PreTrainedTokenizerFast(tokenizer_file=tokenizer_file)
-    tokenizer.add_special_tokens(
-        {
-            "pad_token": "[PAD]",
-            "unk_token": "[UNK]",
-            "cls_token": "[CLS]",
-            "sep_token": "[SEP]",
-            "mask_token": "[MASK]",
-        }
-    )
+    # tokenizer = PreTrainedTokenizerFast(tokenizer_file=tokenizer_file)
+    # tokenizer.add_special_tokens(
+    #     {
+    #         "pad_token": "[PAD]",
+    #         "unk_token": "[UNK]",
+    #         "cls_token": "[CLS]",
+    #         "sep_token": "[SEP]",
+    #         "mask_token": "[MASK]",
+    #     }
+    # )
 
     return tokenizer
 

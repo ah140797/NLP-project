@@ -33,8 +33,12 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 HUGGINGFACE_TOKEN = "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"
 TINYBERT_CONFIG = "huawei-noah/TinyBERT_General_4L_312D"
 
-UNK_TOKEN = "[UNK]"
-SPL_TOKENS = ["[PAD]", "[CLS]", "[SEP]", "[MASK]"] + [UNK_TOKEN]
+# UNK_TOKEN = "[UNK]"
+# SPL_TOKENS = ["[PAD]", "[CLS]", "[SEP]", "[MASK]"] + [UNK_TOKEN]
+
+UNK_TOKEN = "<UNK>"
+SPL_TOKENS = ["<UNK>", "<SEP>", "<MASK>", "<CLS>", "<PAD>"]
+
 MAX_LENGTH = 512
 
 ALL_MODELS_FOLDER = "models"
