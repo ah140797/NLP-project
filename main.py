@@ -125,7 +125,25 @@ def main(args):
                         print(f"Dataset Size (Processed): {processed_dataset_size}")
                         print("=" * 50)
 
-                        tokenizer = tokenizer = Tokenizer.from_file(tokenizer_file)
+                        tokenizer = Tokenizer.from_file(tokenizer_file)
+
+                        tokenizer = PreTrainedTokenizerFast(
+                            tokenizer_object=tokenizer,
+                            return_special_tokens_mask=True,
+                            mask_token="<MASK>",
+                            return_token_type_ids=False,
+                        )
+
+                        tokenizer.add_special_tokens(
+                            {
+                                "pad_token": "<PAD>",
+                                # "unk_token": "<UNK>",
+                                # "cls_token": "<CLS>",
+                                # "sep_token": "<SEP>",
+                                "mask_token": "<MASK>",
+                            }
+                        )
+
                         tokenized_dataset = tokenize_dataset(
                             processed_dataset, tokenizer, MAX_LENGTH
                         )

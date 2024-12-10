@@ -62,7 +62,7 @@ def train_tokenizer(
     unk_token: str,
     spl_tokens: list[str],
     tokenizer_file: str,
-) -> PreTrainedTokenizerFast:
+) -> Tokenizer:
     """
     Trains a tokenizer on the given dataset and saves it to a file.
 
@@ -84,17 +84,6 @@ def train_tokenizer(
     tokenizer.train_from_iterator(dataset_text_iterator(dataset), trainer)
     tokenizer.save(tokenizer_file)
     tokenizer = Tokenizer.from_file(tokenizer_file)
-
-    # tokenizer = PreTrainedTokenizerFast(tokenizer_file=tokenizer_file)
-    # tokenizer.add_special_tokens(
-    #     {
-    #         "pad_token": "[PAD]",
-    #         "unk_token": "[UNK]",
-    #         "cls_token": "[CLS]",
-    #         "sep_token": "[SEP]",
-    #         "mask_token": "[MASK]",
-    #     }
-    # )
 
     return tokenizer
 
