@@ -162,6 +162,7 @@ def create_mlm_trainer(
         nonlocal tokenizer
         logits = torch.tensor(eval_pred.predictions)
         labels = torch.tensor(eval_pred.label_ids)
+        print(f"labels", labels)
 
         mask = labels != -100
         labels = labels[mask]

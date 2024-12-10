@@ -137,9 +137,9 @@ def main(args):
                         tokenizer.add_special_tokens(
                             {
                                 "pad_token": "<PAD>",
-                                # "unk_token": "<UNK>",
-                                # "cls_token": "<CLS>",
-                                # "sep_token": "<SEP>",
+                                "unk_token": "<UNK>",
+                                "cls_token": "<CLS>",
+                                "sep_token": "<SEP>",
                                 "mask_token": "<MASK>",
                             }
                         )
