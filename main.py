@@ -52,6 +52,8 @@ def main(args):
     os.environ["PYTORCH_CUDA_ALLOC_CONF"] = (
         "expandable_segments:True"  # remove allocated memory thats not in use
     )
+    os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
+    os.environ["TORCH_USE_CUDA_DSA"] = "1"
 
     dataset_size = args.dataset_size
 
