@@ -214,7 +214,7 @@ def create_mlm_trainer(
         warmup_ratio=0.05,
         logging_dir="./logs",
         save_strategy="epoch",
-        logging_steps=5,
+        logging_steps=1,
         use_cpu=False,
         fp16=True,
         report_to="wandb",
