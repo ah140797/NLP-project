@@ -43,7 +43,6 @@ def prepare_tokenizer_trainer(
         trainer = BpeTrainer(special_tokens=spl_tokens, vocab_size=vocabulary_size)
     elif alg == TOKENIZER_WPC:
         tokenizer = Tokenizer(WordPiece(unk_token=unk_token))
-        tokenizer.pre_tokenizer = Whitespace()
         trainer = WordPieceTrainer(
             special_tokens=spl_tokens,
             vocab_size=vocabulary_size,
@@ -59,6 +58,7 @@ def prepare_tokenizer_trainer(
         )
 
     tokenizer.normalizer = Sequence([NFC(), StripAccents()])
+    tokenizer.pre_tokenizer = Whitespace()
 
     tokenizer.post_processor = TemplateProcessing(
         single="<CLS> $A <SEP>",
