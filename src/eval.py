@@ -75,11 +75,11 @@ def calculate_eval_metrics(
     num_words = []
     num_tokens = []
     
-   for example in ds_spa:
+   for example in dataset:
         # number of charcters excluding whitespace
         n_chars = len(''.join(example['text'].split()))
-        # number of words (*count commas as one word*)
-        n_words = len(example['text'].replace(",", " , ").split())
+        # number of words (*count periods/commas/colons as one word*)
+        n_words = len(example['text'].replace(".", " . ").replace(",", " , ").replace(":", " : ").split())
 
         # Calculate number of tokens
         inputs = tokenizer(
