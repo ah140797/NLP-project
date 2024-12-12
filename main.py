@@ -130,14 +130,6 @@ def main(args):
                             processed_dataset, tokenizer, MAX_LENGTH
                         )
 
-                        import json
-
-                        tokenized_dataset_list = list(tokenized_dataset)
-                        # Save as JSON
-                        with open("tokenized_dataset.json", "w") as f:
-                            json.dump(tokenized_dataset_list, f)
-                        break
-
                         config = BertConfig.from_pretrained(
                             TINYBERT_CONFIG, vocab_size=vocab_size
                         )

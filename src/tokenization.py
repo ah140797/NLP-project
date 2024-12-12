@@ -7,6 +7,7 @@ from tokenizers.trainers import (
 )
 from transformers import PreTrainedTokenizerFast
 from tokenizers.normalizers import Sequence, NFC, StripAccents
+from tokenizers.pre_tokenizers import Whitespace
 from tokenizers.processors import TemplateProcessing
 
 from datasets import IterableDataset
@@ -42,8 +43,10 @@ def prepare_tokenizer_trainer(
         trainer = BpeTrainer(special_tokens=spl_tokens, vocab_size=vocabulary_size)
     elif alg == TOKENIZER_WPC:
         tokenizer = Tokenizer(WordPiece(unk_token=unk_token))
+        tokenizer.pre_tokenizer = Whitespace()
         trainer = WordPieceTrainer(
-            special_tokens=spl_tokens, vocab_size=vocabulary_size
+            special_tokens=spl_tokens,
+            vocab_size=vocabulary_size,
         )
     elif alg == TOKENIZER_UNI:
         tokenizer = Tokenizer(Unigram())
@@ -58,9 +61,9 @@ def prepare_tokenizer_trainer(
     tokenizer.normalizer = Sequence([NFC(), StripAccents()])
 
     tokenizer.post_processor = TemplateProcessing(
-        single="[CLS] $A [SEP]",
-        pair="[CLS] $A [SEP] $B:1 [SEP]:1",
-        special_tokens=[("[CLS]", 1), ("[SEP]", 2)],
+        single="<CLS> $A <SEP>",
+        pair="<CLS> $A <SEP> $B:1 <SEP<:1",
+        special_tokens=[("<CLS>", 1), ("<SEP>", 2)],
     )
 
     return tokenizer, trainer
