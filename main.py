@@ -27,14 +27,12 @@ from src.eval import eval_bpc_ppl
 
 import warnings
 
-warnings.filterwarnings("ignore", category=FutureWarning)
+warnings.filterwarnings("ignore")
 
 
 HUGGINGFACE_TOKEN = "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"
 TINYBERT_CONFIG = "huawei-noah/TinyBERT_General_4L_312D"
 
-# UNK_TOKEN = "[UNK]"
-# SPL_TOKENS = ["[PAD]", "[CLS]", "[SEP]", "[MASK]"] + [UNK_TOKEN]
 
 UNK_TOKEN = "<UNK>"
 SPL_TOKENS = ["<UNK>", "<CLS>", "<SEP>", "<MASK>", "<PAD>"]
