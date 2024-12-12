@@ -35,7 +35,6 @@ def eval_bpc_ppl(
 
         n_tokens = inputs["input_ids"].size(1)
         total_tokens += n_tokens
-
         with torch.no_grad():
             outputs = model(**inputs, labels=inputs["input_ids"])
             nll_loss = outputs.loss.item()

@@ -20,7 +20,7 @@ from src.utils import (
     load_model_from_checkpoint,
 )
 
-from src.tokenization import train_tokenizer, tokenize_dataset
+from src.tokenization import train_tokenizer, tokenize_dataset, load_tokenizer
 
 from src.training import add_arguments, create_mlm_trainer
 
@@ -35,8 +35,12 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 HUGGINGFACE_TOKEN = "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"
 TINYBERT_CONFIG = "huawei-noah/TinyBERT_General_4L_312D"
 
-UNK_TOKEN = "[UNK]"
-SPL_TOKENS = ["[PAD]", "[CLS]", "[SEP]", "[MASK]"] + [UNK_TOKEN]
+# UNK_TOKEN = "[UNK]"
+# SPL_TOKENS = ["[PAD]", "[CLS]", "[SEP]", "[MASK]"] + [UNK_TOKEN]
+
+UNK_TOKEN = "<UNK>"
+SPL_TOKENS = ["<UNK>", "<CLS>", "<SEP>", "<MASK>", "<PAD>"]
+
 MAX_LENGTH = 512
 
 ALL_MODELS_FOLDER = "models"
@@ -51,6 +55,11 @@ def main(args):
     login(HUGGINGFACE_TOKEN)
     wandb.login()
     os.environ["WANDB_LOG_MODEL"] = "checkpoint"
+    os.environ["PYTORCH_CUDA_ALLOC_CONF"] = (
+        "expandable_segments:True"  # remove allocated memory thats not in use
+    )
+    os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
+    os.environ["TORCH_USE_CUDA_DSA"] = "1"
 
     dataset_size = args.dataset_size
 
@@ -75,24 +84,24 @@ def main(args):
 
                     tokenizer_file = os.path.join(
                         ALL_TOKENIZERS_FOLDER,
-                        f"tokenizer_{language}_{tokenizer_name}_vs{vocab_size}_ts{processed_dataset_size}.json",
+                        f"tokenizer_{language}_{tokenizer_name}_vs{vocab_size}.json",
                     )
 
                     model_folder = os.path.join(
                         ALL_MODELS_FOLDER,
-                        f"model_{language}_{tokenizer_name}_vs{vocab_size}_ts{processed_dataset_size}",
+                        f"model_{language}_{tokenizer_name}_vs{vocab_size}",
                     )
 
                     model_results_folder = os.path.join(
                         ALL_RESULTS_FOLDER,
-                        f"{language}_{tokenizer_name}_vs{vocab_size}_ts{processed_dataset_size}",
+                        f"{language}_{tokenizer_name}_vs{vocab_size}",
                     )
 
                     os.makedirs(model_results_folder, exist_ok=True)
 
-                    if mode == "train":
+                    if mode == "traintoken":
                         print("=" * 50)
-                        print(f"Start Training with configuration:")
+                        print(f"Start Tokenizer Training:")
                         print(f"Language: {language}")
                         print(f"Tokenizer Type: {tokenizer_name}")
                         print(f"Vocabulary Size: {vocab_size}")
@@ -107,19 +116,45 @@ def main(args):
                             SPL_TOKENS,
                             tokenizer_file,
                         )
+
+                    elif mode == "train":
+                        print("=" * 50)
+                        print(f"Start Training with configuration:")
+                        print(f"Language: {language}")
+                        print(f"Tokenizer Type: {tokenizer_name}")
+                        print(f"Vocabulary Size: {vocab_size}")
+                        print(f"Dataset Size (Processed): {processed_dataset_size}")
+                        print("=" * 50)
+
+                        tokenizer = load_tokenizer(tokenizer_file)
+
                         tokenized_dataset = tokenize_dataset(
                             processed_dataset, tokenizer, MAX_LENGTH
                         )
+
+                        import json
+
+                        tokenized_dataset_list = list(tokenized_dataset)
+                        # Save as JSON
+                        with open("tokenized_dataset.json", "w") as f:
+                            json.dump(tokenized_dataset_list, f)
+                        break
 
                         config = BertConfig.from_pretrained(
                             TINYBERT_CONFIG, vocab_size=vocab_size
                         )
                         model = AutoModelForMaskedLM.from_config(config)
-                        # if n_gpu > 1:
-                        #    model = nn.DataParallel(model)
+
+                        if n_gpu > 1:
+                            model = nn.DistributedDataParallel(model)
 
                         max_steps = (
-                            int(processed_dataset_size / args.batch_size) * args.epochs
+                            int(
+                                processed_dataset_size
+                                / args.batch_size
+                                / args.gradient_accumulation
+                            )
+                            * args.epochs
                         )
                         print(f"Max steps: {max_steps}")
                         trainer = create_mlm_trainer(
@@ -131,6 +166,7 @@ def main(args):
                             args.learning_rate,
                             args.wandb_run_name,
                             args.epochs,
+                            args.gradient_accumulation,
                             max_steps,
                         )
                         torch.cuda.empty_cache()

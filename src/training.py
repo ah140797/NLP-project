@@ -1,11 +1,23 @@
-from transformers import Trainer, TrainingArguments, DataCollatorForLanguageModeling
+from transformers import (
+    Trainer,
+    TrainingArguments,
+    DataCollatorForLanguageModeling,
+    trainer_callback,
+)
 from transformers import PreTrainedTokenizerFast
 from transformers import AutoModelForMaskedLM
 from datasets import IterableDataset
-import torch
+import numpy as np
 
 from math import exp
 from math import log as ln
+
+
+import torch
+from torch.nn.functional import cross_entropy
+from copy import deepcopy
+from math import log as ln
+from itertools import islice
 
 
 TOKENIZER_BPE = "BPE"
@@ -18,9 +30,9 @@ def add_arguments(parser):
         "-m",
         "--modes",
         type=str,
-        nargs="+",  # Allow multiple languages
-        choices=["train", "eval"],  # "es" for Spanish, "tr" for Turkish
-        default=["train"],  # Default to Spanish if no language is specified
+        nargs="+",
+        choices=["traintoken", "train", "eval"],
+        default=["train"],
         help="Whether to train or evaluate a model. Defaults to ['train'].",
     )
     parser.add_argument(
@@ -78,12 +90,34 @@ def add_arguments(parser):
         help="Learning rate for training.",
     )
     parser.add_argument(
-        "-wandb",
+        "-ga",
+        "--gradient-accumulation",
+        type=int,
+        default=2,
+        help="Gradient accumulation for training.",
+    )
+    parser.add_argument(
+        "-n",
         "--wandb-run-name",
         type=str,
         default="tokenizer_run",
         help="Run name for tracking WandB.",
     )
+
+
+class CustomCallback(trainer_callback.TrainerCallback):
+
+    def __init__(self, trainer) -> None:
+        super().__init__()
+        self._trainer = trainer
+
+    def on_step_end(self, args, state, control, **kwargs):
+        if control.should_log:
+            control_copy = deepcopy(control)
+            self._trainer.evaluate(
+                eval_dataset=self._trainer.train_dataset, metric_key_prefix="model"
+            )
+            return control_copy
 
 
 def create_mlm_trainer(
@@ -95,6 +129,7 @@ def create_mlm_trainer(
     learning_rate: float,
     run_name: str,
     train_epochs: int,
+    gradient_accumulation: int,
     max_steps: int,
 ):
     """
@@ -115,56 +150,59 @@ def create_mlm_trainer(
         Trainer: The configured Trainer instance.
     """
 
-    def compute_bpc(pred: tuple[torch.tensor, torch.tensor]) -> dict[str, float]:
-        """
-        Calculates Perplexity (PPL) and Bits Per Character (BPC) for a batch.
+    def compute_metrics(eval_pred, compute_result=True):
+        """Computes the perplexity metric for language modeling.
 
         Args:
-            pred (Tuple[torch.Tensor, torch.Tensor]):
-                    - logits (torch.Tensor): Model output logits of shape [batch_size, seq_len, vocab_size].
-                    - labels (torch.Tensor): Ground-truth token labels of shape [batch_size, seq_len].
-            tokenizer (PreTrainedTokenizerBase):
-                A tokenizer instance used to compute the character-level length.
+            eval_pred (EvalPrediction): The evaluation prediction object from the Trainer.
 
         Returns:
-            Dict[str, float]:
-                - "ppl" (float): Perplexity of the batch.
-                - "bpc" (float): Bits per character of the batch.
+            dict: A dictionary containing the perplexity metric.
         """
         nonlocal tokenizer
-        logits, labels = pred
-        logits = torch.tensor(logits)
-        labels = torch.tensor(labels)
+        logits = torch.tensor(eval_pred.predictions)
+        labels = torch.tensor(eval_pred.label_ids)
+        print(f"labels", labels)
+        unique_labels = torch.unique(labels)
+        unique_label_count = unique_labels.numel()
+        print(unique_label_count)
 
-        print(logits.shape)
-        print(labels.shape)
-
-        mask = (
-            labels != -100
-        )  # -100 is the default ignore index for padding in Hugging Face#
+        mask = labels != -100
         labels = labels[mask]
         logits = logits[mask]
 
-        print(labels)
-        print(logits)
-        print(logits.shape)
-        print(labels.shape)
+        probs = cross_entropy(logits, labels)
 
-        probs = torch.nn.functional.softmax(logits, dim=-1)
-        print(probs.shape)
-        true_probs = probs[torch.arange(len(labels)), labels]
+        # Calculate perplexity
+        perplexity = torch.exp(probs)
 
-        nll = -torch.log(true_probs).mean().item()
-        perplexity = exp(nll)
-        print(nll)
-        print(perplexity)
+        total_no_tokens = labels.size(0)
+        total_chars = sum(len(tokenizer.decode([label])) for label in labels)
 
-        total_chars = sum(
-            len(tokenizer.decode([label])) for label in labels
-        )  # going from token id to token and then to chars
-        bpc = ln(perplexity) / ln(2) * (len(labels) / total_chars)
+        bpc = ln(perplexity) / ln(2) * (total_no_tokens / total_chars)
+        return {"perplexity": perplexity.item(), "bpc": bpc}
 
-        return {"ppl": float(perplexity), "bpc": float(bpc)}
+    def dataset_batch_generator(iterable_dataset, batch_size):
+        """
+        Generator to yield batches of size `batch_size` from an IterableDataset.
+
+        Args:
+            iterable_dataset (IterableDataset): The dataset to generate batches from.
+            batch_size (int): The number of examples per batch.
+
+        Yields:
+            list: A batch of examples.
+        """
+        dataset_iterator = iter(iterable_dataset)
+        while True:
+            batch = list(islice(dataset_iterator, batch_size))
+            if not batch:
+                break
+            yield batch
+
+    eval_dataset_gen = dataset_batch_generator(
+        tokenized_dataset, batch_size * gradient_accumulation * 5
+    )
 
     data_collator = DataCollatorForLanguageModeling(
         tokenizer=tokenizer, mlm=True, mlm_probability=0.15, return_tensors="pt"
@@ -174,30 +212,44 @@ def create_mlm_trainer(
         output_dir=f"./{model_file}",
         overwrite_output_dir=True,
         lr_scheduler_type="linear",
-        warmup_ratio=0.01,
+        warmup_ratio=0.05,
         logging_dir="./logs",
-        save_strategy="steps",
-        logging_steps=10,
+        save_strategy="epoch",
+        logging_steps=5,
         use_cpu=False,
         fp16=True,
         report_to="wandb",
-        # gradient_accumulation_steps=8,
         run_name=run_name,
         per_device_train_batch_size=batch_size,
         learning_rate=learning_rate,
         num_train_epochs=train_epochs,
+        gradient_accumulation_steps=gradient_accumulation,
+        # eval_accumulation_steps=gradient_accumulation,
         max_steps=max_steps,
-        # evaluation_strategy="steps",
-        # per_device_eval_batch_size=batch_size,
+        batch_eval_metrics=True,  # ensures that we get same batch size in eval
+        evaluation_strategy="steps",
+        per_device_eval_batch_size=batch_size,
     )
 
     trainer = Trainer(
         model=model,
         args=training_args,
         train_dataset=tokenized_dataset,
+        eval_dataset=next(eval_dataset_gen),
         tokenizer=tokenizer,
         data_collator=data_collator,
+        compute_metrics=compute_metrics,
+        # preprocess_logits_for_metrics=preprocess_logits_for_metrics,
     )
 
     # trainer.add_callback(CustomCallback(trainer))
     return trainer
+
+    # def preprocess_logits_for_metrics(logits, labels):
+    #     """
+    #     Original Trainer may have a memory leak.
+    #     This is a workaround to avoid storing too many tensors that are not needed.
+    #     """
+    #     pred_ids = torch.argmax(logits, dim=-1)  # argmax over vocab
+
+    #   return pred_ids, labels
