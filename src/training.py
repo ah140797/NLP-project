@@ -7,7 +7,7 @@ from transformers import (
 from transformers import PreTrainedTokenizerFast
 from transformers import AutoModelForMaskedLM
 from datasets import IterableDataset
-import torch
+import numpy as np
 
 from math import exp
 from math import log as ln
@@ -17,6 +17,7 @@ import torch
 from torch.nn.functional import cross_entropy
 from copy import deepcopy
 from math import log as ln
+from itertools import islice
 
 
 TOKENIZER_BPE = "BPE"
@@ -29,9 +30,9 @@ def add_arguments(parser):
         "-m",
         "--modes",
         type=str,
-        nargs="+",  # Allow multiple languages
-        choices=["train", "eval"],  # "es" for Spanish, "tr" for Turkish
-        default=["train"],  # Default to Spanish if no language is specified
+        nargs="+",
+        choices=["traintoken", "train", "eval"],
+        default=["train"],
         help="Whether to train or evaluate a model. Defaults to ['train'].",
     )
     parser.add_argument(
@@ -89,27 +90,19 @@ def add_arguments(parser):
         help="Learning rate for training.",
     )
     parser.add_argument(
-        "-wandb",
+        "-ga",
+        "--gradient-accumulation",
+        type=int,
+        default=2,
+        help="Gradient accumulation for training.",
+    )
+    parser.add_argument(
+        "-n",
         "--wandb-run-name",
         type=str,
         default="tokenizer_run",
         help="Run name for tracking WandB.",
     )
-
-
-class CustomCallback(trainer_callback.TrainerCallback):
-
-    def __init__(self, trainer) -> None:
-        super().__init__()
-        self._trainer = trainer
-
-    def on_step_end(self, args, state, control, **kwargs):
-        if control.should_log:
-            control_copy = deepcopy(control)
-            self._trainer.evaluate(
-                eval_dataset=self._trainer.train_dataset, metric_key_prefix="model"
-            )
-            return control_copy
 
 
 def create_mlm_trainer(
@@ -121,6 +114,7 @@ def create_mlm_trainer(
     learning_rate: float,
     run_name: str,
     train_epochs: int,
+    gradient_accumulation: int,
     max_steps: int,
 ):
     """
@@ -141,7 +135,7 @@ def create_mlm_trainer(
         Trainer: The configured Trainer instance.
     """
 
-    def compute_metrics(eval_pred):
+    def compute_metrics(eval_pred, compute_result=True):
         """Computes the perplexity metric for language modeling.
 
         Args:
@@ -151,15 +145,10 @@ def create_mlm_trainer(
             dict: A dictionary containing the perplexity metric.
         """
         nonlocal tokenizer
-
         logits = torch.tensor(eval_pred.predictions)
         labels = torch.tensor(eval_pred.label_ids)
 
-        # Convert logits to probabilities
-        mask = (
-            labels != -100
-        )  # -100 is the default ignore index for padding in Hugging Face#
-
+        mask = labels != -100
         labels = labels[mask]
         logits = logits[mask]
 
@@ -169,11 +158,32 @@ def create_mlm_trainer(
         perplexity = torch.exp(probs)
 
         total_no_tokens = labels.size(0)
-
         total_chars = sum(len(tokenizer.decode([label])) for label in labels)
 
         bpc = ln(perplexity) / ln(2) * (total_no_tokens / total_chars)
         return {"perplexity": perplexity.item(), "bpc": bpc}
+
+    def dataset_batch_generator(iterable_dataset, batch_size):
+        """
+        Generator to yield batches of size `batch_size` from an IterableDataset.
+
+        Args:
+            iterable_dataset (IterableDataset): The dataset to generate batches from.
+            batch_size (int): The number of examples per batch.
+
+        Yields:
+            list: A batch of examples.
+        """
+        dataset_iterator = iter(iterable_dataset)
+        while True:
+            batch = list(islice(dataset_iterator, batch_size))
+            if not batch:
+                break
+            yield batch
+
+    eval_dataset_gen = dataset_batch_generator(
+        tokenized_dataset, batch_size * gradient_accumulation * 5
+    )
 
     data_collator = DataCollatorForLanguageModeling(
         tokenizer=tokenizer, mlm=True, mlm_probability=0.15, return_tensors="pt"
@@ -183,31 +193,32 @@ def create_mlm_trainer(
         output_dir=f"./{model_file}",
         overwrite_output_dir=True,
         lr_scheduler_type="linear",
-        warmup_ratio=0.01,
+        warmup_ratio=0.05,
         logging_dir="./logs",
-        save_strategy="steps",
-        logging_steps=4,
+        save_strategy="epoch",
+        logging_steps=5,
         use_cpu=False,
         fp16=True,
         report_to="wandb",
-        # gradient_accumulation_steps=8,
         run_name=run_name,
         per_device_train_batch_size=batch_size,
         learning_rate=learning_rate,
         num_train_epochs=train_epochs,
+        gradient_accumulation_steps=gradient_accumulation,
         max_steps=max_steps,
-        # evaluation_strategy="steps",
-        # per_device_eval_batch_size=batch_size,
+        batch_eval_metrics=True,  # ensures that we get same batch size in eval
+        evaluation_strategy="steps",
+        per_device_eval_batch_size=batch_size,
     )
 
     trainer = Trainer(
         model=model,
         args=training_args,
         train_dataset=tokenized_dataset,
+        eval_dataset=next(eval_dataset_gen),
         tokenizer=tokenizer,
         data_collator=data_collator,
         compute_metrics=compute_metrics,
     )
 
-    trainer.add_callback(CustomCallback(trainer))
     return trainer
