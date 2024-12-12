@@ -62,7 +62,7 @@ def prepare_tokenizer_trainer(
 
     tokenizer.post_processor = TemplateProcessing(
         single="<CLS> $A <SEP>",
-        pair="<CLS> $A <SEP> $B:1 <SEP<:1",
+        pair="<CLS> $A <SEP> $B:1 <SEP>:1",
         special_tokens=[("<CLS>", 1), ("<SEP>", 2)],
     )
 
