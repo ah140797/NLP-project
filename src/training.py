@@ -7,7 +7,7 @@ from transformers import (
 from transformers import PreTrainedTokenizerFast
 from transformers import AutoModelForMaskedLM
 from datasets import IterableDataset
-import torch
+import numpy as np
 
 from math import exp
 from math import log as ln
@@ -163,6 +163,9 @@ def create_mlm_trainer(
         logits = torch.tensor(eval_pred.predictions)
         labels = torch.tensor(eval_pred.label_ids)
         print(f"labels", labels)
+        unique_labels = torch.unique(labels)
+        unique_label_count = unique_labels.numel()
+        print(unique_label_count)
 
         mask = labels != -100
         labels = labels[mask]

@@ -6,6 +6,9 @@ from tokenizers.trainers import (
     UnigramTrainer,
 )
 from transformers import PreTrainedTokenizerFast
+from tokenizers.normalizers import Sequence, NFC, StripAccents
+from tokenizers.processors import TemplateProcessing
+
 from datasets import IterableDataset
 
 from src.utils import dataset_text_iterator
@@ -20,7 +23,7 @@ def prepare_tokenizer_trainer(
     alg: str, vocabulary_size: int, unk_token: str, spl_tokens: list[str]
 ) -> tuple[Tokenizer, object]:
     """
-    Prepares a tokenizer and its trainer based on the selected algorithm.
+    Prepares a tokenizer and its trainer based on the selected algorithm. Also NFC and strip-accent normalizes.
 
     Args:
         alg (str): The tokenizer algorithm to use. Options are 'BPE', 'WPC', or 'UNI'.
@@ -52,6 +55,14 @@ def prepare_tokenizer_trainer(
             f"Unknown tokenizer type. Please use either {TOKENIZER_BPE}, {TOKENIZER_WPC}, or {TOKENIZER_UNI}"
         )
 
+    tokenizer.normalizer = Sequence([NFC(), StripAccents()])
+
+    tokenizer.post_processor = TemplateProcessing(
+        single="[CLS] $A [SEP]",
+        pair="[CLS] $A [SEP] $B:1 [SEP]:1",
+        special_tokens=[("[CLS]", 1), ("[SEP]", 2)],
+    )
+
     return tokenizer, trainer
 
 
@@ -81,6 +92,7 @@ def train_tokenizer(
     tokenizer, trainer = prepare_tokenizer_trainer(
         alg, vocabulary_size, unk_token, spl_tokens
     )
+
     tokenizer.train_from_iterator(dataset_text_iterator(dataset), trainer)
     tokenizer.save(tokenizer_file)
     tokenizer = Tokenizer.from_file(tokenizer_file)
@@ -114,3 +126,31 @@ def tokenize_dataset(
         remove_columns=["text"],
     )
     return tokenized_dataset
+
+
+def load_tokenizer(tokenizer_file: str):
+
+    tokenizer = Tokenizer.from_file(tokenizer_file)
+
+    tokenizer = PreTrainedTokenizerFast(
+        tokenizer_object=tokenizer,
+        unk_token="<UNK>",
+        pad_token="<PAD>",
+        cls_token="<CLS>",
+        sep_token="<SEP>",
+        mask_token="<MASK>",
+        return_special_tokens_mask=True,
+        return_token_type_ids=False,
+    )
+
+    tokenizer.add_special_tokens(
+        {
+            "pad_token": "<PAD>",
+            "unk_token": "<UNK>",
+            "cls_token": "<CLS>",
+            "sep_token": "<SEP>",
+            "mask_token": "<MASK>",
+        }
+    )
+
+    return tokenizer

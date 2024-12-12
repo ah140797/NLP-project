@@ -6,7 +6,6 @@ import argparse
 import torch
 from torch import nn
 from transformers import BertConfig, AutoModelForMaskedLM, PreTrainedTokenizerFast
-from tokenizers import Tokenizer
 
 from huggingface_hub import login
 import wandb
@@ -20,7 +19,7 @@ from src.utils import (
     load_model_from_checkpoint,
 )
 
-from src.tokenization import train_tokenizer, tokenize_dataset
+from src.tokenization import train_tokenizer, tokenize_dataset, load_tokenizer
 
 from src.training import add_arguments, create_mlm_trainer
 
@@ -83,17 +82,17 @@ def main(args):
 
                     tokenizer_file = os.path.join(
                         ALL_TOKENIZERS_FOLDER,
-                        f"tokenizer_{language}_{tokenizer_name}_vs{vocab_size}_ts{processed_dataset_size}.json",
+                        f"tokenizer_{language}_{tokenizer_name}_vs{vocab_size}.json",
                     )
 
                     model_folder = os.path.join(
                         ALL_MODELS_FOLDER,
-                        f"model_{language}_{tokenizer_name}_vs{vocab_size}_ts{processed_dataset_size}",
+                        f"model_{language}_{tokenizer_name}_vs{vocab_size}",
                     )
 
                     model_results_folder = os.path.join(
                         ALL_RESULTS_FOLDER,
-                        f"{language}_{tokenizer_name}_vs{vocab_size}_ts{processed_dataset_size}",
+                        f"{language}_{tokenizer_name}_vs{vocab_size}",
                     )
 
                     os.makedirs(model_results_folder, exist_ok=True)
@@ -125,24 +124,7 @@ def main(args):
                         print(f"Dataset Size (Processed): {processed_dataset_size}")
                         print("=" * 50)
 
-                        tokenizer = Tokenizer.from_file(tokenizer_file)
-
-                        tokenizer = PreTrainedTokenizerFast(
-                            tokenizer_object=tokenizer,
-                            return_special_tokens_mask=True,
-                            mask_token="<MASK>",
-                            return_token_type_ids=False,
-                        )
-
-                        tokenizer.add_special_tokens(
-                            {
-                                "pad_token": "<PAD>",
-                                "unk_token": "<UNK>",
-                                "cls_token": "<CLS>",
-                                "sep_token": "<SEP>",
-                                "mask_token": "<MASK>",
-                            }
-                        )
+                        tokenizer = load_tokenizer(tokenizer_file)
 
                         tokenized_dataset = tokenize_dataset(
                             processed_dataset, tokenizer, MAX_LENGTH
