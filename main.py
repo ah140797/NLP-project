@@ -202,11 +202,13 @@ def main(args):
                         # Load (pre-processed) evaluation dataset
                         eval_ds = load_from_disk(f'../data/eval_ds_{language}')
 
-                        calculate_eval_metrics(tokenizer, eval_ds, model_results_folder)
+                        calculate_eval_metrics(tokenizer, processed_dataset, model_results_folder, True)
+                        calculate_eval_metrics(tokenizer, eval_ds, model_results_folder, False)
 
-    
-    # Commented out as you cannot backtrack processed_dataset_size for the results
-    #calculate_parity(args.languages, args.tokenizer_types, args.vocab_sizes)
+
+    if mode == "eval":
+        calculate_parity(args.languages, args.tokenizer_types, args.vocab_sizes)
+        calculate_normalized_sequence_length(args.languages, args.tokenizer_types, args.vocab_sizes)
 
 
     return
