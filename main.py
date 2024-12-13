@@ -6,6 +6,7 @@ import argparse
 import torch
 from torch import nn
 from transformers import BertConfig, AutoModelForMaskedLM, PreTrainedTokenizerFast
+from datasets import load_from_disk
 
 from huggingface_hub import login
 import wandb
@@ -23,7 +24,8 @@ from src.tokenization import train_tokenizer, tokenize_dataset, load_tokenizer
 
 from src.training import add_arguments, create_mlm_trainer
 
-from src.eval import eval_bpc_ppl
+from src.eval import eval_bpc_ppl, calculate_eval_metrics, calculate_parity
+
 
 import warnings
 
@@ -186,6 +188,18 @@ def main(args):
                             processed_dataset_size,
                             model_results_folder,
                         )
+
+                        # Load (pre-processed) evaluation dataset
+                        eval_ds = load_from_disk(f'../data/eval_ds_{language}')
+
+                        calculate_eval_metrics(tokenizer, processed_dataset, model_results_folder, True)
+                        calculate_eval_metrics(tokenizer, eval_ds, model_results_folder, False)
+
+
+    if mode == "eval":
+        calculate_parity(args.languages, args.tokenizer_types, args.vocab_sizes)
+        calculate_normalized_sequence_length(args.languages, args.tokenizer_types, args.vocab_sizes)
+
 
     return
 

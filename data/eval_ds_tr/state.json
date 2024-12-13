@@ -1,0 +1,25 @@
+{
+  "_data_files": [
+    {
+      "filename": "data-00000-of-00001.arrow"
+    }
+  ],
+  "_fingerprint": "caf61f657fd4b105",
+  "_format_columns": [
+    "domain",
+    "glottocode",
+    "has_hyperlink",
+    "has_image",
+    "id",
+    "iso_15924",
+    "iso_639_3",
+    "last_updated",
+    "text",
+    "topic",
+    "url"
+  ],
+  "_format_kwargs": {},
+  "_format_type": null,
+  "_output_all_columns": false,
+  "_split": null
+}

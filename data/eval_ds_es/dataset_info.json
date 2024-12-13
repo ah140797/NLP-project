@@ -1,0 +1,52 @@
+{
+  "citation": "",
+  "description": "",
+  "features": {
+    "id": {
+      "dtype": "int64",
+      "_type": "Value"
+    },
+    "iso_639_3": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "iso_15924": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "glottocode": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "text": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "url": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "domain": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "topic": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "has_image": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "has_hyperlink": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "last_updated": {
+      "dtype": "string",
+      "_type": "Value"
+    }
+  },
+  "homepage": "",
+  "license": ""
+}
