@@ -7,7 +7,7 @@ from tokenizers.trainers import (
 )
 from transformers import PreTrainedTokenizerFast
 from tokenizers.normalizers import Sequence, NFC, StripAccents
-from tokenizers.pre_tokenizers import Whitespace
+from tokenizers.pre_tokenizers import Whitespace, Punctuation
 from tokenizers.processors import TemplateProcessing
 
 from datasets import IterableDataset
@@ -58,7 +58,7 @@ def prepare_tokenizer_trainer(
         )
 
     tokenizer.normalizer = Sequence([NFC(), StripAccents()])
-    tokenizer.pre_tokenizer = Whitespace()
+    tokenizer.pre_tokenizer = Sequence([Whitespace(), Punctuation()])
 
     tokenizer.post_processor = TemplateProcessing(
         single="<CLS> $A <SEP>",
