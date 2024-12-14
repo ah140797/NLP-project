@@ -6,8 +6,13 @@ from tokenizers.trainers import (
     UnigramTrainer,
 )
 from transformers import PreTrainedTokenizerFast
-from tokenizers.normalizers import Sequence, NFC, StripAccents
-from tokenizers.pre_tokenizers import Whitespace, Punctuation
+from tokenizers.normalizers import (
+    Sequence,
+    NFC,
+    StripAccents,
+    Sequence as NormalizerSequence,
+)
+from tokenizers.pre_tokenizers import Whitespace, Punctuation, Sequence as PreSequence
 from tokenizers.processors import TemplateProcessing
 
 from datasets import IterableDataset
@@ -57,8 +62,8 @@ def prepare_tokenizer_trainer(
             f"Unknown tokenizer type. Please use either {TOKENIZER_BPE}, {TOKENIZER_WPC}, or {TOKENIZER_UNI}"
         )
 
-    tokenizer.normalizer = Sequence([NFC(), StripAccents()])
-    tokenizer.pre_tokenizer = Sequence([Whitespace(), Punctuation()])
+    tokenizer.normalizer = NormalizerSequence([NFC(), StripAccents()])
+    tokenizer.pre_tokenizer = PreSequence([Whitespace(), Punctuation()])
 
     tokenizer.post_processor = TemplateProcessing(
         single="<CLS> $A <SEP>",
