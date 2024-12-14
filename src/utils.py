@@ -2,7 +2,7 @@ import json
 import os
 import time
 
-from datasets import load_dataset
+from datasets import load_dataset, concatenate_datasets
 from datasets import IterableDataset
 import torch
 from torch import nn
@@ -33,6 +33,66 @@ def get_oscar_dataset(language: str, training_size: int) -> IterableDataset:
 
     return dataset
 
+def load_flores_dataset(language: str) -> IterableDataset:
+    """Loads the FLORES dataset in streaming-mode (iteratabledataset) for a specified language and training size.
+
+    Args:
+        language (str): The language code for the desired language subset of the FLORES dataset (e.g., 'en' for English, 'tr' for Turkish).
+
+    Returns:
+        IterableDataset: An iteretable dataset object of the FLORES dataset, for language specified.
+    """
+
+    def preprocess_text(example):
+        example['text'] = example['text'].replace("\n", "").lower()
+        return example
+
+    dataset = load_dataset("openlanguagedata/flores_plus")
+
+    if language == "es":
+        dataset1 = dataset["dev"].filter(lambda x: x['iso_639_3'] == "spa")
+        dataset2 = dataset["devtest"].filter(lambda x: x['iso_639_3'] == "spa")
+
+    elif language == "tr":
+        dataset1 = dataset["dev"].filter(lambda x: x['iso_639_3'] == "tur")
+        dataset2 = dataset["devtest"].filter(lambda x: x['iso_639_3'] == "tur")
+
+    else:
+        exit()
+
+    dataset = concatenate_datasets([dataset1, dataset2])
+
+    dataset = dataset.map(preprocess_text)
+
+    return dataset
+
+def load_massive_dataset(language: str) -> IterableDataset:
+    """Loads the MASSIVE dataset in streaming-mode (iteratabledataset) for a specified language and training size.
+
+    Args:
+        language (str): The language code for the desired language subset of the MASSIVE dataset (e.g., 'en' for English, 'tr' for Turkish).
+
+    Returns:
+        IterableDataset: An iteretable dataset object of the MASSIVE dataset, for language specified.
+    """
+    def preprocess_utt(example):
+        example['text'] = example['utt'].replace("\n", "").lower()
+        return example
+
+    if language == "es":
+        dataset = load_dataset("AmazonScience/massive", "es-ES")
+
+    elif language == "tr":
+        dataset = load_dataset("AmazonScience/massive", "tr-TR")
+
+    else:
+        exit()
+
+    dataset = concatenate_datasets([dataset['train'], dataset['validation'], dataset['test']])
+
+    dataset = dataset.map(preprocess_utt)
+
+    return dataset
 
 def dataset_text_iterator(dataset: IterableDataset):
     """Yields the 'text' column from an iterable dataset.

@@ -1,3 +1,4 @@
+from tokenizers.pre_tokenizers import Sequence, Whitespace, Punctuation
 from transformers import PreTrainedModel, PreTrainedTokenizerFast
 from datasets import Dataset
 import torch
@@ -65,65 +66,32 @@ def eval_bpc_ppl(
     return bpc
 
 def calculate_eval_metrics(
-    #language: str,
     tokenizer: PreTrainedTokenizerFast,
     dataset: Dataset,
     model_results_folder: str,
-    train_flag: bool
+    dataset_name: str
     ) -> None:
-
-    def get_boundaries(text, tokens):
-        boundaries = set()
-        current_position = 0
-        for token in tokens:
-            # Skip whitespace characters
-            while current_position < len(text) and text[current_position].isspace():
-                current_position += 1
-            boundaries.add(current_position)
-            current_position += len(token)
-        # Add the end position of the last token as a boundary
-        boundaries.add(current_position)
-        return boundaries
 
     num_chars = []
     num_words = []
     num_tokens = []
-    #f1_scores = []
-
-    #nlp = spacy.load(f"{language}_core_news_sm")
             
     for example in dataset:
         # number of charcters excluding whitespace
         n_chars = len(''.join(example['text'].split()))
-        # number of words (*count periods/commas/colons as one word*)
-        n_words = len(example['text'].replace(".", " . ").replace(",", " , ").replace(":", " : ").split())
+        # number of words 
+        pre_tokenizer = Sequence([Whitespace(), Punctuation()])
+        n_words = len(pre_tokenizer.pre_tokenize_str(example["text"]))
 
         # Calculate number of tokens
         inputs = tokenizer(
-            example["text"], return_tensors="pt", truncation=True, max_length=512
+            example["text"], return_tensors="pt", truncation=True, max_length=512, add_special_tokens=False
         )  
         n_tokens = inputs['input_ids'].size(1)
 
         num_chars.append(n_chars)
         num_words.append(n_words)
         num_tokens.append(n_tokens)
-
-        # Prepare the inputs to calculate f1
-        #morphemes = [token.text for token in nlp(example["text"])]
-        #tokens = tokenizer.convert_ids_to_tokens(inputs['input_ids'][0].tolist())
-        #bound_morpheme = get_boundaries(example["text"], morphemes)
-        #bound_token = get_boundaries(example["text"], tokens)
-
-        #tp = len(bound_token & bound_morpheme)
-        #fp = len(bound_token - bound_morpheme)
-        #fn = len(bound_morpheme - bound_token)
-
-        #precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
-        #recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
-        #f1_score = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0.0
-
-        #f1_scores.append(f1_score)
-
 
     # calculate LPT (Length per Tokens)
     lpt = [n_chars/n_tokens for n_chars, n_tokens in zip(num_chars, num_tokens)]
@@ -137,29 +105,24 @@ def calculate_eval_metrics(
             "num_tokens": num_tokens,
             "lpt": lpt,
             "fertility": fertility,
-            #"f1_score": f1_scores
         }
 
-    if train_flag:
-        results_file = os.path.join(
+    results_file = os.path.join(
             model_results_folder,
-            "eval_metrics_train.json",
-        )
-
-    else:
-        results_file = os.path.join(
-            model_results_folder,
-            "eval_metrics.json",
+            f"eval_metrics_{dataset_name}.json",
         )
 
     with open(results_file, "w") as f:
         json.dump(results, f, indent=4)
 
+
 def calculate_parity(
     languages: list,
     tokenizer_types: list,
-    vocab_sizes: list
+    vocab_sizes: list,
+    dataset_name: str
     ) -> None:
+
     for tokenizer_name in tokenizer_types:
         for vocab_size in vocab_sizes:
             num_tokens = []
@@ -168,7 +131,7 @@ def calculate_parity(
                 model_results_folder = f"results/{language}_{tokenizer_name}_vs{vocab_size}"
                 model_results_path = os.path.join(
                     model_results_folder,
-                    'eval_metrics.json'
+                    f'eval_metrics_{dataset_name}.json'
                     )
                 with open(model_results_path) as f:
                     results = json.load(f)
@@ -182,7 +145,7 @@ def calculate_parity(
 
             results_path = os.path.join(
                     model_results_folder,
-                    'parity.json'
+                    f'parity_{dataset_name}.json'
                     )
 
             with open(results_path, "w") as f:
@@ -192,8 +155,10 @@ def calculate_parity(
 def calculate_normalized_sequence_length(
     languages: list,
     tokenizer_types: list,
-    vocab_sizes: list
+    vocab_sizes: list,
+    dataset_name: str
     ) -> None:
+
     for language in languages:
         for vocab in vocab_sizes:
             num_tokens = []
@@ -202,7 +167,7 @@ def calculate_normalized_sequence_length(
                 model_results_folder = f"results/{language}_{tokenizer_name}_vs{vocab_size}"
                 model_results_path = os.path.join(
                     model_results_folder,
-                    'eval_metrics_train.json'
+                    f'eval_metrics_{dataset_name}.json'
                     )
                 with open(model_results_path) as f:
                     results = json.load(f)
@@ -220,6 +185,11 @@ def calculate_normalized_sequence_length(
                 "tokenizer_names": tokenizer_types
             }
 
+            results_path = os.path.join(
+                    model_results_folder,
+                    f'nsl_{dataset_name}.json'
+                    )
+
             with open(results_path, "w") as f:
                 json.dump(results, f, indent=4)
 
@@ -227,39 +197,96 @@ def calculate_normalized_sequence_length(
 def calculate_productivity(
     language: str,
     tokenizer_name: str,
-    vocab_size: str,
+    vocab_size: int,
     tokenizer: PreTrainedTokenizerFast,
     dataset: Dataset,
+    dataset_name: str
     ) -> None:
     
     productivity_dict = {}
+    unique_words_set = set()
     
     # Load the results from train_tokenizer
     tokenizer_results_path = f"tokenizers/tokenizer_{language}_{tokenizer_name}_vs{vocab_size}.json"
-    with open(model_results_path) as f:
+    with open(tokenizer_results_path) as f:
         results = json.load(f)
+    
+    token_dict = {}
+    for key, values in results['model']['vocab'].items():
+        token_dict[values] = key
+    
+    pre_tokenizer = Sequence([Whitespace(), Punctuation()])
 
-    nlp = spacy.load(f"{language}_core_news_sm")
-
-    for example in tqdm(
-        dataset, total=len(dataset), desc="Computing productivity", unit="example"
-    ):
+    for example in dataset:
         # Get unique words in each text
-        words = [token.text for token in nlp(example["text"])]
-        for word in words:
-            tokens = tokenizer.encode(word)
-            for token in tokens:
-                if token in productivity_dict:
-                    productivity_dict[token] += 1
-                else:
-                    productivity_dict[token] = 1
+        words = [pre_token[0] for pre_token in pre_tokenizer.pre_tokenize_str(example["text"])]
+        unique_words_set.update(words)
+        
+    for word in unique_words_set:
+        tokens = tokenizer.encode(word, add_special_tokens=False)
+        for token in tokens:
+            if token_dict[token] in productivity_dict:
+                productivity_dict[token_dict[token]] += 1
+            else:
+                productivity_dict[token_dict[token]] = 1
 
-    results_path = f"results/{language}_{tokenizer_name}_vs{vocab_size}/productivity.json"
+    results_path = f"results/{language}_{tokenizer_name}_vs{vocab_size}/productivity_{dataset_name}.json"
 
     with open(results_path, "w") as f:
                 json.dump(productivity_dict, f, indent=4)
 
+def calculate_f1_score(
+    tokenizer: PreTrainedTokenizerFast,
+    dataset: Dataset,
+    model_results_folder: str
+    ) -> None:
 
+    def get_boundaries(text, tokens):
+        boundaries = set()
+        current_position = 0
+        for token in tokens:
+            # Skip whitespace characters
+            while current_position < len(text) and text[current_position].isspace():
+                current_position += 1
+            boundaries.add(current_position)
+            current_position += len(token)
+        # Add the end position of the last token as a boundary
+        boundaries.add(current_position)
+        return boundaries
+
+    f1_scores = []
+
+    for example in dataset:
+        inputs = tokenizer(
+            example["text"], return_tensors="pt", truncation=True, max_length=512, add_special_tokens=False
+        )  
+        tokens = tokenizer.convert_ids_to_tokens(inputs['input_ids'][0].tolist())
+        tokens = [token[2:] if token.startswith('##') else token for token in tokens]
+
+        bound_morpheme = get_boundaries(example["text"], example["morphemes"])
+        bound_token = get_boundaries(example["text"], tokens)
+
+        tp = len(bound_token & bound_morpheme)
+        fp = len(bound_token - bound_morpheme)
+        fn = len(bound_morpheme - bound_token)
+
+        precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
+        recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+        f1_score = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0.0
+
+        f1_scores.append(f1_score)
+
+    results = {
+            "f1_score": f1_scores,
+        }
+
+    results_file = os.path.join(
+            model_results_folder,
+            f"f1_score.json",
+        )
+
+    with open(results_file, "w") as f:
+        json.dump(results, f, indent=4)
 
 
 
