@@ -2,12 +2,15 @@ import json
 import os
 import time
 
+from tokenizers.pre_tokenizers import Sequence, Whitespace, Punctuatio
 from datasets import load_dataset, concatenate_datasets
-from datasets import IterableDataset
+from datasets import Dataset, IterableDataset
 import torch
 from torch import nn
 
 from fast_langdetect import detect
+
+from conllu import parse
 
 
 def get_oscar_dataset(language: str, training_size: int) -> IterableDataset:
@@ -94,6 +97,30 @@ def load_massive_dataset(language: str) -> IterableDataset:
 
     return dataset
 
+def load_turkish_treebanks_dataset() -> IterableDataset:
+    """Loads the turkish treebanks dataset for calculating F1 score"""
+    with open('data/web.conllu', 'r', encoding='utf-8') as f:
+        data_web = f.read()
+    with open('data/wiki.conllu', 'r', encoding='utf-8') as f:
+        data_wiki = f.read()
+
+    sentences_web = parse(data_web)
+    sentences_wiki = parse(data_wiki)
+
+    dataset = []
+    for sentences in [sentences_web, sentences_web]:
+        for sentence in sentences:
+            morphemes = [token['form'].lower() for token in sentence]
+            dataset.append({
+                'text': sentence.metadata['text'].lower(),
+                'morphemes': morphemes
+                })
+
+    dataset = Dataset.from_list(dataset)
+
+    return dataset
+
+
 def dataset_text_iterator(dataset: IterableDataset):
     """Yields the 'text' column from an iterable dataset.
 
@@ -156,7 +183,7 @@ def preprocess_dataset(
 
 
 def save_stats_dataset(
-    dataset: IterableDataset, results_folder: str, language: str
+    dataset: IterableDataset, dataset_name: str, results_folder: str
 ) -> None:
     """
     Counts and saves the total number of words in the dataset, the size of the dataset in MB, and the number of examples.
@@ -174,8 +201,8 @@ def save_stats_dataset(
 
     for sample in dataset:
         sample_count += 1
-        text = sample["text"]
-        words = text.split()
+        pre_tokenizer = Sequence([Whitespace(), Punctuation()])
+        words = len(pre_tokenizer.pre_tokenize_str(sample["text"]))
         word_count += len(words)
 
         # Get the size of the sample in bytes
@@ -196,7 +223,7 @@ def save_stats_dataset(
 
     results_file = os.path.join(
         results_folder,
-        f"dataset_stats_{language}.json",
+        f"dataset_{dataset_name}_stats.json",
     )
 
     with open(results_file, "w") as f:

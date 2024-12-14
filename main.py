@@ -79,7 +79,15 @@ def main(args):
             dataset, language
         )
 
-        save_stats_dataset(processed_dataset, dataset_results_folder, language)
+        eval_ds_flores = load_flores_dataset(language)
+        eval_ds_massive = load_massive_dataset(language)
+
+        if language == "tr":
+            eval_ds_treebanks = load_turkish_treebanks_dataset()
+
+        save_stats_dataset(processed_dataset, "oscar" dataset_results_folder)
+        save_stats_dataset(eval_ds_flores, "flores" dataset_results_folder)
+        save_stats_dataset(eval_ds_massive, "massive" dataset_results_folder)
 
         for mode in args.modes:
             for tokenizer_name in args.tokenizer_types:
@@ -203,25 +211,22 @@ def main(args):
                         #    model_results_folder,
                         #)
 
-                        eval_ds_flores = load_flores_dataset(language)
-                        eval_ds_massive = load_massive_dataset(language)
-
                         calculate_eval_metrics(tokenizer, eval_ds_flores, model_results_folder, "flores")
                         calculate_eval_metrics(tokenizer, eval_ds_massive, model_results_folder, "massive")
                         calculate_productivity(language, tokenizer_name, vocab_size, tokenizer, eval_ds_flores, "flores")
                         calculate_productivity(language, tokenizer_name, vocab_size, tokenizer, eval_ds_massive, "massive")
 
                         if language == "tr":
-                            eval_ds_treebanks = load_turkish_treebanks_dataset()
                             calculate_f1_score(tokenizer, eval_ds_treebanks, model_results_folder)
 
 
     if mode == "eval":
-        # Needs to be commented out unless arg.tokenizer_types has all 3 types
-        #calculate_normalized_sequence_length(args.languages, args.tokenizer_types, args.vocab_sizes, "flores")
-        #calculate_normalized_sequence_length(args.languages, args.tokenizer_types, args.vocab_sizes, "massive")
         calculate_parity(args.languages, args.tokenizer_types, args.vocab_sizes, "flores")
         calculate_parity(args.languages, args.tokenizer_types, args.vocab_sizes, "massive")
+        
+        # Needs to be commented out unless arg.tokenizer_types has all 3 types
+        calculate_normalized_sequence_length(args.languages, args.tokenizer_types, args.vocab_sizes, "flores")
+        calculate_normalized_sequence_length(args.languages, args.tokenizer_types, args.vocab_sizes, "massive")
 
 
     return
