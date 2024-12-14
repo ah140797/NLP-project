@@ -67,9 +67,9 @@ def eval_bpc_ppl(
 def calculate_eval_metrics(
     #language: str,
     tokenizer: PreTrainedTokenizerFast,
-    dataset: IterableDataset,
+    dataset: Dataset,
     model_results_folder: str,
-    train_flag: boolean
+    train_flag: bool
     ) -> None:
 
     def get_boundaries(text, tokens):
@@ -92,7 +92,7 @@ def calculate_eval_metrics(
 
     #nlp = spacy.load(f"{language}_core_news_sm")
             
-   for example in dataset:
+    for example in dataset:
         # number of charcters excluding whitespace
         n_chars = len(''.join(example['text'].split()))
         # number of words (*count periods/commas/colons as one word*)
@@ -229,7 +229,7 @@ def calculate_productivity(
     tokenizer_name: str,
     vocab_size: str,
     tokenizer: PreTrainedTokenizerFast,
-    dataset: IterableDataset,
+    dataset: Dataset,
     ) -> None:
     
     productivity_dict = {}

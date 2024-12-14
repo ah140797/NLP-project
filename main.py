@@ -174,31 +174,33 @@ def main(args):
 
                         checkpoint_dir = load_model_from_checkpoint(model_folder)
 
-                        model = AutoModelForMaskedLM.from_pretrained(checkpoint_dir)
-
                         tokenizer = PreTrainedTokenizerFast.from_pretrained(
                             checkpoint_dir
                         )
-                        model.eval()
 
-                        bpc = eval_bpc_ppl(
-                            model,
-                            tokenizer,
-                            processed_dataset,
-                            processed_dataset_size,
-                            model_results_folder,
-                        )
+                        #model = AutoModelForMaskedLM.from_pretrained(checkpoint_dir)
+
+                        #model.eval()
+
+                        #bpc = eval_bpc_ppl(
+                        #    model,
+                        #    tokenizer,
+                        #    processed_dataset,
+                        #    processed_dataset_size,
+                        #    model_results_folder,
+                        #)
 
                         # Load (pre-processed) evaluation dataset
-                        eval_ds = load_from_disk(f'../data/eval_ds_{language}')
+                        eval_ds = load_from_disk(f'data/eval_ds_{language}')
 
-                        calculate_eval_metrics(tokenizer, processed_dataset, model_results_folder, True)
+                        #calculate_eval_metrics(tokenizer, processed_dataset, model_results_folder, True)
                         calculate_eval_metrics(tokenizer, eval_ds, model_results_folder, False)
 
 
     if mode == "eval":
         calculate_parity(args.languages, args.tokenizer_types, args.vocab_sizes)
-        calculate_normalized_sequence_length(args.languages, args.tokenizer_types, args.vocab_sizes)
+        # Needs to be commented out unless arg.tokenizer_types has all 3 types
+        #calculate_normalized_sequence_length(args.languages, args.tokenizer_types, args.vocab_sizes)
 
 
     return
