@@ -108,7 +108,7 @@ def load_turkish_treebanks_dataset() -> IterableDataset:
     sentences_wiki = parse(data_wiki)
 
     dataset = []
-    for sentences in [sentences_web, sentences_web]:
+    for sentences in [sentences_web, sentences_wiki]:
         for sentence in sentences:
             morphemes = [token['form'].lower() for token in sentence]
             dataset.append({
