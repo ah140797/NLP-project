@@ -163,7 +163,7 @@ def calculate_normalized_sequence_length(
         for vocab in vocab_sizes:
             num_tokens = []
             # Load the results from calculate_eval_metrics
-            for tokenizer in tokenizer_types:
+            for tokenizer_name in tokenizer_types:
                 model_results_folder = f"results/{language}_{tokenizer_name}_vs{vocab_size}"
                 model_results_path = os.path.join(
                     model_results_folder,

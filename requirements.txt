@@ -2,6 +2,7 @@ numpy
 pandas
 torch
 huggingface
+huggingface_hub[cli]
 tqdm
 transformers
 scikit-learn

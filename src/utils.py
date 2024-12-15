@@ -2,7 +2,7 @@ import json
 import os
 import time
 
-from tokenizers.pre_tokenizers import Sequence, Whitespace, Punctuatio
+from tokenizers.pre_tokenizers import Sequence, Whitespace, Punctuation
 from datasets import load_dataset, concatenate_datasets
 from datasets import Dataset, IterableDataset
 import torch
@@ -202,7 +202,7 @@ def save_stats_dataset(
     for sample in dataset:
         sample_count += 1
         pre_tokenizer = Sequence([Whitespace(), Punctuation()])
-        words = len(pre_tokenizer.pre_tokenize_str(sample["text"]))
+        words = pre_tokenizer.pre_tokenize_str(sample["text"])
         word_count += len(words)
 
         # Get the size of the sample in bytes

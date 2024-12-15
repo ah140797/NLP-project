@@ -27,7 +27,7 @@ from src.tokenization import train_tokenizer, tokenize_dataset, load_tokenizer
 
 from src.training import add_arguments, create_mlm_trainer
 
-from src.eval import eval_bpc_ppl, calculate_eval_metrics, calculate_parity, calculate_productivity
+from src.eval import eval_bpc_ppl, calculate_eval_metrics, calculate_f1_score, calculate_parity, calculate_normalized_sequence_length, calculate_productivity
 
 
 import warnings
@@ -35,7 +35,6 @@ import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 
-HUGGINGFACE_TOKEN = "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"
 TINYBERT_CONFIG = "huawei-noah/TinyBERT_General_4L_312D"
 
 # UNK_TOKEN = "[UNK]"
@@ -55,7 +54,6 @@ def main(args):
     device, n_gpu = get_available_device()
     print(f"Using device: {device}\nWith {n_gpu} GPUs")
 
-    login(HUGGINGFACE_TOKEN)
     wandb.login()
     os.environ["WANDB_LOG_MODEL"] = "checkpoint"
     os.environ["PYTORCH_CUDA_ALLOC_CONF"] = (
@@ -79,17 +77,19 @@ def main(args):
             dataset, language
         )
 
-        eval_ds_flores = load_flores_dataset(language)
-        eval_ds_massive = load_massive_dataset(language)
-
-        if language == "tr":
-            eval_ds_treebanks = load_turkish_treebanks_dataset()
-
-        save_stats_dataset(processed_dataset, "oscar" dataset_results_folder)
-        save_stats_dataset(eval_ds_flores, "flores" dataset_results_folder)
-        save_stats_dataset(eval_ds_massive, "massive" dataset_results_folder)
+        save_stats_dataset(processed_dataset, "oscar", dataset_results_folder)
 
         for mode in args.modes:
+            if mode == "eval":
+                eval_ds_flores = load_flores_dataset(language)
+                eval_ds_massive = load_massive_dataset(language)
+
+                save_stats_dataset(eval_ds_flores, "flores", dataset_results_folder)
+                save_stats_dataset(eval_ds_massive, "massive", dataset_results_folder)
+
+                if language == "tr":
+                    eval_ds_treebanks = load_turkish_treebanks_dataset()
+
             for tokenizer_name in args.tokenizer_types:
                 for vocab_size in args.vocab_sizes:
 
