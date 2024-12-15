@@ -31,13 +31,11 @@ from src.eval import eval_bpc_ppl, calculate_eval_metrics, calculate_f1_score, c
 
 import warnings
 
-warnings.filterwarnings("ignore", category=FutureWarning)
+warnings.filterwarnings("ignore")
 
 
 TINYBERT_CONFIG = "huawei-noah/TinyBERT_General_4L_312D"
 
-# UNK_TOKEN = "[UNK]"
-# SPL_TOKENS = ["[PAD]", "[CLS]", "[SEP]", "[MASK]"] + [UNK_TOKEN]
 
 UNK_TOKEN = "<UNK>"
 SPL_TOKENS = ["<UNK>", "<CLS>", "<SEP>", "<MASK>", "<PAD>"]
@@ -141,14 +139,6 @@ def main(args):
                         tokenized_dataset = tokenize_dataset(
                             processed_dataset, tokenizer, MAX_LENGTH
                         )
-
-                        import json
-
-                        tokenized_dataset_list = list(tokenized_dataset)
-                        # Save as JSON
-                        with open("tokenized_dataset.json", "w") as f:
-                            json.dump(tokenized_dataset_list, f)
-                        break
 
                         config = BertConfig.from_pretrained(
                             TINYBERT_CONFIG, vocab_size=vocab_size
