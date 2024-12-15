@@ -2,12 +2,15 @@ import json
 import os
 import time
 
-from datasets import load_dataset
-from datasets import IterableDataset
+from tokenizers.pre_tokenizers import Sequence, Whitespace, Punctuation
+from datasets import load_dataset, concatenate_datasets
+from datasets import Dataset, IterableDataset
 import torch
 from torch import nn
 
 from fast_langdetect import detect
+
+from conllu import parse
 
 
 def get_oscar_dataset(language: str, training_size: int) -> IterableDataset:
@@ -30,6 +33,90 @@ def get_oscar_dataset(language: str, training_size: int) -> IterableDataset:
     )
 
     dataset = dataset.take(training_size)
+
+    return dataset
+
+def load_flores_dataset(language: str) -> IterableDataset:
+    """Loads the FLORES dataset in streaming-mode (iteratabledataset) for a specified language and training size.
+
+    Args:
+        language (str): The language code for the desired language subset of the FLORES dataset (e.g., 'en' for English, 'tr' for Turkish).
+
+    Returns:
+        IterableDataset: An iteretable dataset object of the FLORES dataset, for language specified.
+    """
+
+    def preprocess_text(example):
+        example['text'] = example['text'].replace("\n", "").lower()
+        return example
+
+    dataset = load_dataset("openlanguagedata/flores_plus")
+
+    if language == "es":
+        dataset1 = dataset["dev"].filter(lambda x: x['iso_639_3'] == "spa")
+        dataset2 = dataset["devtest"].filter(lambda x: x['iso_639_3'] == "spa")
+
+    elif language == "tr":
+        dataset1 = dataset["dev"].filter(lambda x: x['iso_639_3'] == "tur")
+        dataset2 = dataset["devtest"].filter(lambda x: x['iso_639_3'] == "tur")
+
+    else:
+        exit()
+
+    dataset = concatenate_datasets([dataset1, dataset2])
+
+    dataset = dataset.map(preprocess_text)
+
+    return dataset
+
+def load_massive_dataset(language: str) -> IterableDataset:
+    """Loads the MASSIVE dataset in streaming-mode (iteratabledataset) for a specified language and training size.
+
+    Args:
+        language (str): The language code for the desired language subset of the MASSIVE dataset (e.g., 'en' for English, 'tr' for Turkish).
+
+    Returns:
+        IterableDataset: An iteretable dataset object of the MASSIVE dataset, for language specified.
+    """
+    def preprocess_utt(example):
+        example['text'] = example['utt'].replace("\n", "").lower()
+        return example
+
+    if language == "es":
+        dataset = load_dataset("AmazonScience/massive", "es-ES")
+
+    elif language == "tr":
+        dataset = load_dataset("AmazonScience/massive", "tr-TR")
+
+    else:
+        exit()
+
+    dataset = concatenate_datasets([dataset['train'], dataset['validation'], dataset['test']])
+
+    dataset = dataset.map(preprocess_utt)
+
+    return dataset
+
+def load_turkish_treebanks_dataset() -> IterableDataset:
+    """Loads the turkish treebanks dataset for calculating F1 score"""
+    with open('data/web.conllu', 'r', encoding='utf-8') as f:
+        data_web = f.read()
+    with open('data/wiki.conllu', 'r', encoding='utf-8') as f:
+        data_wiki = f.read()
+
+    sentences_web = parse(data_web)
+    sentences_wiki = parse(data_wiki)
+
+    dataset = []
+    for sentences in [sentences_web, sentences_wiki]:
+        for sentence in sentences:
+            morphemes = [token['form'].lower() for token in sentence]
+            dataset.append({
+                'text': sentence.metadata['text'].lower(),
+                'morphemes': morphemes
+                })
+
+    dataset = Dataset.from_list(dataset)
 
     return dataset
 
@@ -96,7 +183,7 @@ def preprocess_dataset(
 
 
 def save_stats_dataset(
-    dataset: IterableDataset, results_folder: str, language: str
+    dataset: IterableDataset, dataset_name: str, results_folder: str
 ) -> None:
     """
     Counts and saves the total number of words in the dataset, the size of the dataset in MB, and the number of examples.
@@ -114,8 +201,8 @@ def save_stats_dataset(
 
     for sample in dataset:
         sample_count += 1
-        text = sample["text"]
-        words = text.split()
+        pre_tokenizer = Sequence([Whitespace(), Punctuation()])
+        words = pre_tokenizer.pre_tokenize_str(sample["text"])
         word_count += len(words)
 
         # Get the size of the sample in bytes
@@ -136,7 +223,7 @@ def save_stats_dataset(
 
     results_file = os.path.join(
         results_folder,
-        f"dataset_stats_{language}.json",
+        f"dataset_{dataset_name}_stats.json",
     )
 
     with open(results_file, "w") as f:

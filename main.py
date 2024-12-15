@@ -8,11 +8,13 @@ from torch import nn
 from transformers import BertConfig, AutoModelForMaskedLM, PreTrainedTokenizerFast
 from datasets import load_from_disk
 
-from huggingface_hub import login
 import wandb
 
 from src.utils import (
     get_oscar_dataset,
+    load_flores_dataset,
+    load_massive_dataset,
+    load_turkish_treebanks_dataset,
     preprocess_dataset,
     save_stats_dataset,
     save_num_params,
@@ -24,7 +26,7 @@ from src.tokenization import train_tokenizer, tokenize_dataset, load_tokenizer
 
 from src.training import add_arguments, create_mlm_trainer
 
-from src.eval import eval_bpc_ppl, calculate_eval_metrics, calculate_parity
+from src.eval import eval_bpc_ppl, calculate_eval_metrics, calculate_f1_score, calculate_parity, calculate_normalized_sequence_length, calculate_productivity
 
 
 import warnings
@@ -32,7 +34,6 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-HUGGINGFACE_TOKEN = "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"
 TINYBERT_CONFIG = "huawei-noah/TinyBERT_General_4L_312D"
 
 
@@ -50,7 +51,6 @@ def main(args):
     device, n_gpu = get_available_device()
     print(f"Using device: {device}\nWith {n_gpu} GPUs")
 
-    login(HUGGINGFACE_TOKEN)
     wandb.login()
     os.environ["WANDB_LOG_MODEL"] = "checkpoint"
     os.environ["PYTORCH_CUDA_ALLOC_CONF"] = (
@@ -74,9 +74,19 @@ def main(args):
             dataset, language
         )
 
-        save_stats_dataset(processed_dataset, dataset_results_folder, language)
+        save_stats_dataset(processed_dataset, "oscar", dataset_results_folder)
 
         for mode in args.modes:
+            if mode == "eval":
+                eval_ds_flores = load_flores_dataset(language)
+                eval_ds_massive = load_massive_dataset(language)
+
+                save_stats_dataset(eval_ds_flores, "flores", dataset_results_folder)
+                save_stats_dataset(eval_ds_massive, "massive", dataset_results_folder)
+
+                if language == "tr":
+                    eval_ds_treebanks = load_turkish_treebanks_dataset()
+
             for tokenizer_name in args.tokenizer_types:
                 for vocab_size in args.vocab_sizes:
 
@@ -190,17 +200,22 @@ def main(args):
                         #    model_results_folder,
                         #)
 
-                        # Load (pre-processed) evaluation dataset
-                        eval_ds = load_from_disk(f'data/eval_ds_{language}')
+                        calculate_eval_metrics(tokenizer, eval_ds_flores, model_results_folder, "flores")
+                        calculate_eval_metrics(tokenizer, eval_ds_massive, model_results_folder, "massive")
+                        calculate_productivity(language, tokenizer_name, vocab_size, tokenizer, eval_ds_flores, "flores")
+                        calculate_productivity(language, tokenizer_name, vocab_size, tokenizer, eval_ds_massive, "massive")
 
-                        #calculate_eval_metrics(tokenizer, processed_dataset, model_results_folder, True)
-                        calculate_eval_metrics(tokenizer, eval_ds, model_results_folder, False)
+                        if language == "tr":
+                            calculate_f1_score(tokenizer, eval_ds_treebanks, model_results_folder)
 
 
     if mode == "eval":
-        calculate_parity(args.languages, args.tokenizer_types, args.vocab_sizes)
+        calculate_parity(args.languages, args.tokenizer_types, args.vocab_sizes, "flores")
+        calculate_parity(args.languages, args.tokenizer_types, args.vocab_sizes, "massive")
+        
         # Needs to be commented out unless arg.tokenizer_types has all 3 types
-        #calculate_normalized_sequence_length(args.languages, args.tokenizer_types, args.vocab_sizes)
+        calculate_normalized_sequence_length(args.languages, args.tokenizer_types, args.vocab_sizes, "flores")
+        calculate_normalized_sequence_length(args.languages, args.tokenizer_types, args.vocab_sizes, "massive")
 
 
     return
