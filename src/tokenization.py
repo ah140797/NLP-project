@@ -1,17 +1,8 @@
 from tokenizers import Tokenizer
 from tokenizers.models import BPE, Unigram, WordPiece
-from tokenizers.trainers import (
-    BpeTrainer,
-    WordPieceTrainer,
-    UnigramTrainer,
-)
+from tokenizers.trainers import BpeTrainer, WordPieceTrainer, UnigramTrainer
 from transformers import PreTrainedTokenizerFast
-from tokenizers.normalizers import (
-    Sequence,
-    NFC,
-    StripAccents,
-    Sequence as NormalizerSequence,
-)
+from tokenizers.normalizers import NFC, StripAccents, Sequence as NormalizerSequence
 from tokenizers.pre_tokenizers import Whitespace, Punctuation, Sequence as PreSequence
 from tokenizers.processors import TemplateProcessing
 
