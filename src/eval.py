@@ -160,7 +160,7 @@ def calculate_normalized_sequence_length(
     ) -> None:
 
     for language in languages:
-        for vocab in vocab_sizes:
+        for vocab_size in vocab_sizes:
             num_tokens = []
             # Load the results from calculate_eval_metrics
             for tokenizer_name in tokenizer_types:
