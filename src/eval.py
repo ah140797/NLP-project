@@ -8,27 +8,28 @@ from math import exp, log
 import json
 import os
 
-def eval_bpc_ppl(
+def calculate_bpc_ppl(
     model: PreTrainedModel,
     tokenizer: PreTrainedTokenizerFast,
     dataset: Dataset,
-    dataset_size: int,
     model_results_folder: str,
-) -> float:
+    dataset_name: str,
+) -> None:
 
     nll_losses = []
     total_tokens = 0
     total_characters = 0
 
     for example in tqdm(
-        dataset, total=dataset_size, desc="Computing BPC", unit="example"
+        dataset, total=len(dataset), desc="Computing BPC", unit="example"
     ):
 
-        n_chars = len(example["text"])
+        # number of charcters excluding whitespace
+        n_chars = len(''.join(example['text'].split()))
         total_characters += n_chars
 
         inputs = tokenizer(
-            example["text"], return_tensors="pt", truncation=True, max_length=512
+            example["text"], return_tensors="pt", truncation=True, max_length=512, add_special_tokens=False
         )  # This is a 1 x n_tokens batch.
         inputs = {
             key: value for key, value in inputs.items() if key != "token_type_ids"
@@ -52,18 +53,17 @@ def eval_bpc_ppl(
         "averaged_nll": averaged_nll,
         "total tokens": total_tokens,
         "total characters": total_characters,
-        "dataset size": dataset_size,
+        "dataset size": len(dataset),
     }
 
     results_file = os.path.join(
         model_results_folder,
-        f"bpc_eval.json",
+        f"bpc_{dataset_name}.json",
     )
 
     with open(results_file, "w") as f:
         json.dump(results, f, indent=4)
 
-    return bpc
 
 def calculate_eval_metrics(
     tokenizer: PreTrainedTokenizerFast,
@@ -206,15 +206,6 @@ def calculate_productivity(
     productivity_dict = {}
     unique_words_set = set()
     
-    # Load the results from train_tokenizer
-    tokenizer_results_path = f"tokenizers/tokenizer_{language}_{tokenizer_name}_vs{vocab_size}.json"
-    with open(tokenizer_results_path) as f:
-        results = json.load(f)
-    
-    token_dict = {}
-    for key, values in results['model']['vocab'].items():
-        token_dict[values] = key
-    
     pre_tokenizer = Sequence([Whitespace(), Punctuation()])
 
     for example in dataset:
@@ -225,15 +216,22 @@ def calculate_productivity(
     for word in unique_words_set:
         tokens = tokenizer.encode(word, add_special_tokens=False)
         for token in tokens:
-            if token_dict[token] in productivity_dict:
-                productivity_dict[token_dict[token]] += 1
+            if token in productivity_dict.keys():
+                productivity_dict[token] += 1
             else:
-                productivity_dict[token_dict[token]] = 1
+                productivity_dict[token] = 1
+
+    if dataset_name == "flores":
+        if vocab_size == 40000:
+            argmax_id = max(productivity_dict, key=productivity_dict.get)
+            token = tokenizer.convert_ids_to_tokens(int(argmax_id))
+            print(f'The token with the highest productivity in {tokenizer_name}_{language}: {token}')
 
     results_path = f"results/{language}_{tokenizer_name}_vs{vocab_size}/productivity_{dataset_name}.json"
 
     with open(results_path, "w") as f:
                 json.dump(productivity_dict, f, indent=4)
+
 
 def calculate_f1_score(
     tokenizer: PreTrainedTokenizerFast,
