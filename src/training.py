@@ -105,21 +105,6 @@ def add_arguments(parser):
     )
 
 
-class CustomCallback(trainer_callback.TrainerCallback):
-
-    def __init__(self, trainer) -> None:
-        super().__init__()
-        self._trainer = trainer
-
-    def on_step_end(self, args, state, control, **kwargs):
-        if control.should_log:
-            control_copy = deepcopy(control)
-            self._trainer.evaluate(
-                eval_dataset=self._trainer.train_dataset, metric_key_prefix="model"
-            )
-            return control_copy
-
-
 def create_mlm_trainer(
     tokenizer: PreTrainedTokenizerFast,
     model: AutoModelForMaskedLM,
@@ -162,10 +147,6 @@ def create_mlm_trainer(
         nonlocal tokenizer
         logits = torch.tensor(eval_pred.predictions)
         labels = torch.tensor(eval_pred.label_ids)
-        print(f"labels", labels)
-        unique_labels = torch.unique(labels)
-        unique_label_count = unique_labels.numel()
-        print(unique_label_count)
 
         mask = labels != -100
         labels = labels[mask]
@@ -224,7 +205,6 @@ def create_mlm_trainer(
         learning_rate=learning_rate,
         num_train_epochs=train_epochs,
         gradient_accumulation_steps=gradient_accumulation,
-        # eval_accumulation_steps=gradient_accumulation,
         max_steps=max_steps,
         batch_eval_metrics=True,  # ensures that we get same batch size in eval
         evaluation_strategy="steps",
@@ -239,17 +219,6 @@ def create_mlm_trainer(
         tokenizer=tokenizer,
         data_collator=data_collator,
         compute_metrics=compute_metrics,
-        # preprocess_logits_for_metrics=preprocess_logits_for_metrics,
     )
 
-    # trainer.add_callback(CustomCallback(trainer))
     return trainer
-
-    # def preprocess_logits_for_metrics(logits, labels):
-    #     """
-    #     Original Trainer may have a memory leak.
-    #     This is a workaround to avoid storing too many tensors that are not needed.
-    #     """
-    #     pred_ids = torch.argmax(logits, dim=-1)  # argmax over vocab
-
-    #   return pred_ids, labels
