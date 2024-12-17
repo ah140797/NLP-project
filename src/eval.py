@@ -266,16 +266,21 @@ def calculate_f1_score(
         bound_token = get_boundaries(example["text"], tokens)
         bound_morpheme = get_boundaries(example["text"], example["morphemes"])
         
+        # Remove all splits that pre-tokenizer makes
         bound_token = bound_token - bound_word
         bound_morpheme = bound_morpheme - bound_word
 
-        tp = len(bound_token & bound_morpheme)
-        fp = len(bound_token - bound_morpheme)
-        fn = len(bound_morpheme - bound_token)
+        if not bound_token and not bound_morpheme:
+            f1_score = 1
 
-        precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
-        recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
-        f1_score = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0.0
+        else:
+            tp = len(bound_token & bound_morpheme)
+            fp = len(bound_token - bound_morpheme)
+            fn = len(bound_morpheme - bound_token)
+
+            precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
+            recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+            f1_score = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0.0
 
         f1_scores.append(f1_score)
 
