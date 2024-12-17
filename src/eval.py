@@ -238,7 +238,7 @@ def calculate_f1_score(
     dataset: Dataset,
     model_results_folder: str
     ) -> None:
-
+    
     def get_boundaries(text, tokens):
         boundaries = set()
         current_position = 0
@@ -248,21 +248,26 @@ def calculate_f1_score(
                 current_position += 1
             boundaries.add(current_position)
             current_position += len(token)
-        # Add the end position of the last token as a boundary
-        boundaries.add(current_position)
         return boundaries
 
     f1_scores = []
+    pre_tokenizer = Sequence([Whitespace(), Punctuation()])
 
     for example in dataset:
         inputs = tokenizer(
             example["text"], return_tensors="pt", truncation=True, max_length=512, add_special_tokens=False
         )  
+
+        words = [pre_token[0] for pre_token in pre_tokenizer.pre_tokenize_str(example["text"])]
         tokens = tokenizer.convert_ids_to_tokens(inputs['input_ids'][0].tolist())
         tokens = [token[2:] if token.startswith('##') else token for token in tokens]
 
-        bound_morpheme = get_boundaries(example["text"], example["morphemes"])
+        bound_word = get_boundaries(example["text"], words)
         bound_token = get_boundaries(example["text"], tokens)
+        bound_morpheme = get_boundaries(example["text"], example["morphemes"])
+        
+        bound_token = bound_token - bound_word
+        bound_morpheme = bound_morpheme - bound_word
 
         tp = len(bound_token & bound_morpheme)
         fp = len(bound_token - bound_morpheme)
