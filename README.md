@@ -5,9 +5,9 @@ Anders Hjulmand, Eisuke Okuda, Andreas Flensted
 
 Investgate agglutinativs vs fusional...
 
-Tinybert was trained with a Masked Language Modeling (MLM) objective by masking $15\%$ of tokens. We trained for $1$ epoch with a learning rate of $5e-4$, batch size of $64$ and gradient accumulation of $8$.
+Tinybert was trained with a Masked Language Modeling (MLM) objective by masking 15\% of tokens. We trained for 1 epoch with a learning rate of 5e-4, batch size of 64 and gradient accumulation of 8.
 
-We trained $24$ models, varying by language (Spanish, Turkish), tokenizer (BPE, Wordpiece, Unigram), and vocabulary size ($10$K, $20$K, $30$K, $40$K). 
+We trained 24 models, varying by language (Spanish, Turkish), tokenizer (BPE, Wordpiece, Unigram), and vocabulary size (10K, 20K, 30K, 40K). 
 
 ## 2. Setup
 
@@ -44,13 +44,9 @@ We trained $24$ models, varying by language (Spanish, Turkish), tokenizer (BPE, 
     This will prompt you to enter your Hugging Face credentials.
     <br>
 
-
-
-
-
 ## 3. Usage
 
-The following command will reproduce our results:
+The following command will reproduce our results. 
 
 
 ```bash
@@ -70,7 +66,8 @@ Here are the available command-line parameters:
 - `-ga`: Gradient accumulation for training. Defaults to `8`.
 - `-wandb`: Run name for tracking in WandB. Defaults to `tokenizer_run`.
 
-
+<br>
+The training time for all models was 2 days, using a single NVIDIA L40 GPU.
 
 
 
