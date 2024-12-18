@@ -1,46 +1,77 @@
 # Welcome to the Shinkansen NLP Project
+Anders Hjulmand, Eisuke Okuda, Andreas Flensted
 
+## 1. Introduction
 
-### Requirements
+Investgate agglutinativs vs fusional...
 
-1. **Install the required Python packages:**
+Tinybert was trained with a Masked Language Modeling (MLM) objective by masking $15\%$ of tokens. We trained for $1$ epoch with a learning rate of $5e-4$, batch size of $64$ and gradient accumulation of $8$.
+
+We trained $24$ models, varying by language (Spanish, Turkish), tokenizer (BPE, Wordpiece, Unigram), and vocabulary size ($10$K, $20$K, $30$K, $40$K). 
+
+## 2. Setup
+
+1. **Clone repository**
+   ```bash
+    git clone https://github.com/eisuke119/Research-Project.git
+    ``` 
+
+2. **Install the Python packages:**
 
     ```bash
     pip install -r requirements.txt
     ```
 
-2. **Login to WandB for experiment tracking:**
+3. **WandB Login:**
 
-    If you're using `wandb` for experiment tracking, you need to authenticate using your WandB account. Run the following command:
+    To use `wandb` for experiment tracking, you need to login:
 
     ```bash
     wandb login
     ```
 
-    This will prompt you to enter an API key from [wandb](https://wandb.ai/).
+    This will prompt you to enter an API key from wandb.
+    <br>
+    
 
-## Available Parameters
+4. **HuggingFace Login:**
+   
+    To use HuggingFace, you need to authenticate:
 
+    ```bash
+    huggingface-cli login
+    ```
+    This will prompt you to enter your Hugging Face credentials.
+    <br>
+
+
+
+
+
+## 3. Usage
+
+The following command will reproduce our results:
+
+
+```bash
+python main.py -s 300000 -b 64 -lr 5e-4 -ga 8 -n replicateresults -l es tr -vs 10000 20000 30000 40000 -t BPE WordPiece Unigram -m traintoken train eval
+```
+<br>
 Here are the available command-line parameters:
 
-- `-l`: Language codes for the dataset (e.g., `es`, `tr`). Defaults to `['es']`.
-- `-t`: Tokenizer types to train. Choices: `BPE`, `WordPiece`, `Unigram`. Defaults to `['BPE']`.
+- `-m`: Run mode. Choices: `traintoken`, `train`, `eval`.
+- `-l`: Language codes for all datasets. Choices: `es`, `tr`.
+- `-t`: Tokenizer types to train. Choices: `BPE`, `WordPiece`, `Unigram`.
 - `-vs`: Vocabulary sizes for the tokenizers. Defaults to `[10000]`.
-- `-ts`: Number of training examples. Defaults to `[100000]`.
-- `-e`: Number of training epochs. Defaults to `10`.
-- `-b`: Training batch size. Defaults to `128`.
-- `-lr`: Learning rate for training. Defaults to `5e-5`.
+- `-s`: Number of training examples. Defaults to `300000`.
+- `-e`: Number of training epochs. Defaults to `1`.
+- `-b`: Training batch size. Defaults to `64`.
+- `-lr`: Learning rate for training. Defaults to `5e-4`.
+- `-ga`: Gradient accumulation for training. Defaults to `8`.
 - `-wandb`: Run name for tracking in WandB. Defaults to `tokenizer_run`.
 
-## Example Usage
 
-```bash
-python main.py --languages es tr --tokenizer-types BPE WordPiece --vocab-sizes 10000 20000 --training-sizes 10000 20000 --epochs 3 --batch-size 16 --learning-rate 5e-5 --wandb-run-name example_run
-```
 
-## Replicate Results
-```bash
-python main.py blep blap blup
-```
+
 
 

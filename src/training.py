@@ -65,7 +65,7 @@ def add_arguments(parser):
         "-s",
         "--dataset-size",
         type=int,
-        default=10000,
+        default=300000,
         help="Training size for the tokenizer. Provide a single value, e.g., 1000.",
     )
     parser.add_argument(
@@ -79,21 +79,21 @@ def add_arguments(parser):
         "-b",
         "--batch-size",
         type=int,
-        default=128,
+        default=64,
         help="Training batch size. Defaults to 16.",
     )
     parser.add_argument(
         "-lr",
         "--learning-rate",
         type=float,
-        default=5e-5,
+        default=5e-4,
         help="Learning rate for training.",
     )
     parser.add_argument(
         "-ga",
         "--gradient-accumulation",
         type=int,
-        default=2,
+        default=8,
         help="Gradient accumulation for training.",
     )
     parser.add_argument(
