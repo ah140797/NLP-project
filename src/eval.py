@@ -5,6 +5,7 @@ import torch
 from tqdm import tqdm
 
 from math import exp, log
+import regex
 import json
 import os
 
@@ -239,14 +240,20 @@ def calculate_f1_score(
     model_results_folder: str
     ) -> None:
     
-    def get_boundaries(text, tokens):
+    def get_boundaries(text, tokens, pt_flg=False):
+        text = regex.findall(r'\X', text)
         boundaries = set()
         current_position = 0
         for token in tokens:
+            token = regex.findall(r'\X', token)
             # Skip whitespace characters
             while current_position < len(text) and text[current_position].isspace():
                 current_position += 1
-            boundaries.add(current_position)
+            if len(token) > 1: 
+                boundaries.add((current_position, current_position+len(token)))
+            else:
+                if not pt_flg:
+                    boundaries.add((current_position, current_position+len(token)))
             current_position += len(token)
         return boundaries
 
@@ -254,6 +261,8 @@ def calculate_f1_score(
     pre_tokenizer = Sequence([Whitespace(), Punctuation()])
 
     for example in dataset:
+        f1_score = 0
+
         inputs = tokenizer(
             example["text"], return_tensors="pt", truncation=True, max_length=512, add_special_tokens=False
         )  
@@ -262,25 +271,37 @@ def calculate_f1_score(
         tokens = tokenizer.convert_ids_to_tokens(inputs['input_ids'][0].tolist())
         tokens = [token[2:] if token.startswith('##') else token for token in tokens]
 
-        bound_word = get_boundaries(example["text"], words)
-        bound_token = get_boundaries(example["text"], tokens)
-        bound_morpheme = get_boundaries(example["text"], example["morphemes"])
+        b_m = get_boundaries(example['text'], example['morphemes'])
+        b_w = get_boundaries(example['text'], words, True)
+        b_t = get_boundaries(example['text'], tokens)
         
-        # Remove all splits that pre-tokenizer makes
-        bound_token = bound_token - bound_word
-        bound_morpheme = bound_morpheme - bound_word
+        b_w_unique = {s1 for s1 in (b_w-b_m) if not any(s2[0] <= s1[0] and s1[1] <= s2[1] for s2 in (b_m-b_w))}
+        b_t_unique_dict = {
+            s2: {s1 for s1 in b_t if s2[0] <= s1[0] and s1[1] <= s2[1]}
+            for s2 in b_w_unique
+        }
+        b_m_unique_dict = {
+            s2: {s1 for s1 in (b_m - b_w) if s2[0] <= s1[0] and s1[1] <= s2[1]}
+            for s2 in (b_w - b_m)
+        }
 
-        if not bound_token and not bound_morpheme:
-            f1_score = 1
+        # Calculate F1 for monomorphemic words
+        f1_score = len((b_m&b_w)&b_t)
 
-        else:
-            tp = len(bound_token & bound_morpheme)
-            fp = len(bound_token - bound_morpheme)
-            fn = len(bound_morpheme - bound_token)
+        # Calculate F1 for morpheme-separated words
+        for bound in b_w_unique:
+            tp = len(b_m_unique_dict[bound] & b_t_unique_dict[bound])
+            fp = len(b_t_unique_dict[bound] - b_m_unique_dict[bound])
+            fn = len(b_m_unique_dict[bound] - b_t_unique_dict[bound])
 
             precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
             recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
-            f1_score = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0.0
+            f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0.0
+
+            f1_score += f1
+
+        # Divide by number of unique words in a sentence
+        f1_score /= len(b_w&b_m|b_w_unique)
 
         f1_scores.append(f1_score)
 
