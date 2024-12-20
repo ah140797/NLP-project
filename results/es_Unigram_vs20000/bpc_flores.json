@@ -1,0 +1,8 @@
+{
+    "bpc": 0.47129072022145596,
+    "perplexity": 3.0867220922509033,
+    "averaged_nll": 1.1271097162815396,
+    "total tokens": 74568,
+    "total characters": 257279,
+    "dataset size": 2009
+}
