@@ -1,4 +1,4 @@
-# Welcome to the Shinkansen NLP Project
+# Evaluating Tokenizers on Typologically Distinct Languages: Insights from Turkish and Spanish
 Anders Hjulmand, Eisuke Okuda, Andreas Flensted
 
 ## 1. Introduction
