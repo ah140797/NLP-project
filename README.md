@@ -8,6 +8,7 @@ In this study, we analyzed the characteristics and performance of BPE, WordPiece
 Tinybert was trained with a Masked Language Modeling (MLM) objective by masking 15\% of tokens. We trained for 1 epoch with a peak learning rate of 5e-4, batch size of 64 and gradient accumulation of 8.
 
 In our further analysis, we found that the BPE tokenizer with a vocabulary size of 40K aligned best with Turkish morphemes:
+
 ![hhghfghfghfgh](/figures/turkish_f1_morpheme_results.png)
 
 
