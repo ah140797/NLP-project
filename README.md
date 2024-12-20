@@ -3,17 +3,19 @@ Anders Hjulmand, Eisuke Okuda, Andreas Flensted
 
 ## 1. Introduction
 
-Investgate agglutinativs vs fusional...
+In this study, we analyzed the characteristics and performance of BPE, WordPiece, and Unigram tokenizers on Turkish, an agglutinative language, and Spanish, a fusional language. We found that Turkish uses more tokens per word, had a longer average token length, and was more difficult to model.
 
-Tinybert was trained with a Masked Language Modeling (MLM) objective by masking 15\% of tokens. We trained for 1 epoch with a learning rate of 5e-4, batch size of 64 and gradient accumulation of 8.
+Tinybert was trained with a Masked Language Modeling (MLM) objective by masking 15\% of tokens. We trained for 1 epoch with a peak learning rate of 5e-4, batch size of 64 and gradient accumulation of 8.
 
-We trained 24 models, varying by language (Spanish, Turkish), tokenizer (BPE, Wordpiece, Unigram), and vocabulary size (10K, 20K, 30K, 40K). 
+In our further analysis, we found that the BPE tokenizer with a vocabulary size of 40K aligned best with Turkish morphemes:
+![hhghfghfghfgh](/figures/turkish_f1_morpheme_results.png)
+
 
 ## 2. Setup
 
 1. **Clone repository**
    ```bash
-    git clone https://github.com/eisuke119/Research-Project.git
+    git clone https://github.com/ah140797/NLP-project.git
     ``` 
 
 2. **Install the Python packages:**
