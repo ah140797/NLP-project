@@ -26,7 +26,7 @@ from src.tokenization import train_tokenizer, tokenize_dataset, load_tokenizer
 
 from src.training import add_arguments, create_mlm_trainer
 
-from src.eval import eval_bpc_ppl, calculate_eval_metrics, calculate_f1_score, calculate_parity, calculate_normalized_sequence_length, calculate_productivity
+from src.eval import calculate_bpc_ppl, calculate_eval_metrics, calculate_f1_score, calculate_parity, calculate_normalized_sequence_length, calculate_productivity
 
 
 import warnings
@@ -188,18 +188,12 @@ def main(args):
                             checkpoint_dir
                         )
 
-                        #model = AutoModelForMaskedLM.from_pretrained(checkpoint_dir)
+                        model = AutoModelForMaskedLM.from_pretrained(checkpoint_dir)
 
-                        #model.eval()
+                        model.eval()
 
-                        #bpc = eval_bpc_ppl(
-                        #    model,
-                        #    tokenizer,
-                        #    processed_dataset,
-                        #    processed_dataset_size,
-                        #    model_results_folder,
-                        #)
-
+                        calculate_bpc_ppl(model, tokenizer, eval_ds_flores, model_results_folder, "flores")
+                        calculate_bpc_ppl(model, tokenizer, eval_ds_massive, model_results_folder, "massive")
                         calculate_eval_metrics(tokenizer, eval_ds_flores, model_results_folder, "flores")
                         calculate_eval_metrics(tokenizer, eval_ds_massive, model_results_folder, "massive")
                         calculate_productivity(language, tokenizer_name, vocab_size, tokenizer, eval_ds_flores, "flores")
@@ -213,7 +207,6 @@ def main(args):
         calculate_parity(args.languages, args.tokenizer_types, args.vocab_sizes, "flores")
         calculate_parity(args.languages, args.tokenizer_types, args.vocab_sizes, "massive")
         
-        # Needs to be commented out unless arg.tokenizer_types has all 3 types
         calculate_normalized_sequence_length(args.languages, args.tokenizer_types, args.vocab_sizes, "flores")
         calculate_normalized_sequence_length(args.languages, args.tokenizer_types, args.vocab_sizes, "massive")
 
